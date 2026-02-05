@@ -13,6 +13,10 @@ export function registerCreateSurfaceBasedElementTool(server: McpServer) {
             name: z
               .string()
               .describe("Description of the element (e.g., floor, ceiling)"),
+            category: z
+              .enum(["OST_Floors", "OST_Ceilings", "OST_Roofs"])
+              .optional()
+              .describe("The Revit built-in category for the element. Use OST_Floors for floors, OST_Ceilings for ceilings, OST_Roofs for roofs. If not specified, will be determined from typeId."),
             typeId: z
               .number()
               .optional()
