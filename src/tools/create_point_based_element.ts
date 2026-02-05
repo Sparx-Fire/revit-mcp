@@ -35,6 +35,21 @@ export function registerCreatePointBasedElementTool(server: McpServer) {
               .number()
               .optional()
               .describe("Rotation angle in degrees (0-360)"),
+            hostWallId: z
+              .number()
+              .optional()
+              .describe(
+                "The ElementId of a specific wall to use as host for doors/windows. " +
+                "If not provided, the nearest wall will be auto-detected."
+              ),
+            facingFlipped: z
+              .boolean()
+              .optional()
+              .default(false)
+              .describe(
+                "Whether to flip the facing direction of the door/window. " +
+                "When true, the element faces the opposite side of the wall."
+              ),
           })
         )
         .describe("Array of point-based elements to create"),
