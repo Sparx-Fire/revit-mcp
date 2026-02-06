@@ -10,9 +10,9 @@ export function registerCreateLineBasedElementTool(server: McpServer) {
       data: z
         .array(
           z.object({
-            name: z
+            category: z
               .string()
-              .describe("Description of the element (e.g., wall, beam)"),
+              .describe("Revit built-in category (e.g., OST_Walls, OST_StructuralFraming, OST_DuctCurves)"),
             typeId: z
               .number()
               .optional()
