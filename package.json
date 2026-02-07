@@ -1,7 +1,7 @@
 {
-  "name": "revit-mcp",
+  "name": "@sparx-fire/revit-mcp",
   "version": "1.0.0",
-  "description": "- `create_object` - Create a new object with detailed parameters\r - `delete_object` - Remove an object from view\r - `modify_object` - Modify an existing object's properties",
+  "description": "MCP server for interacting with Autodesk Revit through AI assistants like Claude",
   "main": "index.js",
   "type": "module",
   "bin": {
@@ -10,22 +10,34 @@
   "scripts": {
     "clean": "rimraf build",
     "prebuild": "npm run clean",
-    "build": "tsc"
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
   },
   "files": [
-    "build"
+    "build",
+    "README.md"
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/lisiting01/revit-mcp.git"
+    "url": "git+https://github.com/sparx-fire/revit-mcp.git"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "mcp",
+    "revit",
+    "autodesk",
+    "claude",
+    "ai",
+    "bim",
+    "architecture"
+  ],
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "bugs": {
-    "url": "https://github.com/lisiting01/revit-mcp/issues"
+    "url": "https://github.com/sparx-fire/revit-mcp/issues"
   },
-  "homepage": "https://github.com/lisiting01/revit-mcp#readme",
+  "homepage": "https://github.com/sparx-fire/revit-mcp#readme",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.7.0",
     "better-sqlite3": "^11.7.0",

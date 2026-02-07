@@ -1,4 +1,4 @@
-[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/revit-mcp-revit-mcp-badge.png)](https://mseep.ai/app/revit-mcp-revit-mcp)
+[![Cover Image](./assets/cover.png)](https://github.com/sparx-fire/revit-mcp)
 
 # revit-mcp
 
@@ -6,11 +6,12 @@ English | [简体中文](README_zh.md)
 
 ## Description
 
+> [!NOTE]
+> This is a fork of the original [revit-mcp](https://github.com/mcp-servers-for-revit/revit-mcp) project with additional tools and functionality improvements. These changes have not been through the mseep.ai auditing process.
+
 revit-mcp allows you to interact with Revit using the MCP protocol through MCP-supported clients (such as Claude, Cline, etc.).
 
-This project is the server side (providing Tools to AI), and you need to use [revit-mcp-plugin](https://github.com/revit-mcp/revit-mcp-plugin) (driving Revit) in conjunction.
-
-Join [Discord](https://discord.gg/cGzUGurq) | [QQ Group](http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=kLnQiFVtYBytHm7R58KFoocd3mzU_9DR&authKey=fyXDOBmXP7FMkXAWjddWZumblxKJH7ZycYyLp40At3t9%2FOfSZyVO7zyYgIROgSHF&noverify=0&group_code=792379482)
+This project is the server side (providing Tools to AI), and you need to use [revit-mcp-plugin](https://github.com/sparx-fire/revit-mcp-plugin) (driving Revit) in conjunction.
 
 ## Features
 
@@ -22,42 +23,32 @@ Join [Discord](https://discord.gg/cGzUGurq) | [QQ Group](http://qm.qq.com/cgi-bi
 
 - nodejs 18+
 
-> Complete installation environment still needs to consider the needs of revit-mcp-plugin, please refer to [revit-mcp-plugin](https://github.com/revit-mcp/revit-mcp-plugin)
+> Complete installation environment still needs to consider the needs of revit-mcp-plugin, please refer to [revit-mcp-plugin](https://github.com/sparx-fire/revit-mcp-plugin)
 
 ## Installation
 
-### 1. Build local MCP service
-
-Install dependencies
+**Claude Code**
 
 ```bash
-npm install
+claude mcp add revit-mcp -- npx -y @sparx-fire/revit-mcp
 ```
 
-Build
+**Claude Desktop**
 
-```bash
-npm run build
-```
-
-### 2. Client configuration
-
-**Claude client**
-
-Claude client -> Settings > Developer > Edit Config > claude_desktop_config.json
+Claude Desktop -> Settings -> Developer -> Edit Config -> claude_desktop_config.json
 
 ```json
 {
     "mcpServers": {
         "revit-mcp": {
-            "command": "node",
-            "args": ["<path to the built file>\\build\\index.js"]
+            "command": "npx",
+            "args": ["-y", "@sparx-fire/revit-mcp"]
         }
     }
 }
 ```
 
-Restart the Claude client. When you see the hammer icon, it means the connection to the MCP service is normal.
+Restart Claude Desktop. When you see the hammer icon, it means the connection to the MCP service is normal.
 
 ![claude](./assets/claude.png)
 
@@ -65,14 +56,14 @@ Restart the Claude client. When you see the hammer icon, it means the connection
 
 ```mermaid
 flowchart LR
-	CladueDesktop --> revit-mcp --> SocketService--commandName-->CommandlSet--command-->CommandExecute
-	CommandManager --> CommandlSet
+	ClaudeDesktop --> revit-mcp --> SocketService--commandName-->CommandSet--command-->CommandExecute
+	CommandManager --> CommandSet
 	CommandExecute --executeResult--> SocketService
 	CommandProject1 --> CommandManager
 	CommandProject2 --> CommandManager
 	CommandProject... --> CommandManager
 	subgraph ide1 [MCPClient]
-	CladueDesktop
+	ClaudeDesktop
 	end
 	subgraph ide2 [MCPServer]
 	revit-mcp
@@ -80,7 +71,7 @@ flowchart LR
 	subgraph ide3 [Revit]
 			subgraph ide3.1 [revit-mcp-plugin]
 				SocketService
-				CommandlSet
+				CommandSet
 				CommandManager
 				CommandExecute
 			end
@@ -89,20 +80,31 @@ flowchart LR
 
 ## Supported Tools
 
-| Name                      | Description                               |
-| ------------------------- | ----------------------------------------- |
-| get_current_view_info     | Get current view info                     |
-| get_current_view_elements | Get current view elements                 |
+| Name | Description |
+| ---- | ----------- |
+| get_current_view_info | Get current active view info |
+| get_current_view_elements | Get elements from the current active view |
 | get_available_family_types | Get available family types in current project |
-| get_selected_elements      | Get selected elements                      |
-| create_point_based_element  | Create point based element (door, window, furniture) |
-| create_line_based_element   | Create line based element (wall, beam, pipe) |
-| create_surface_based_element   | Create surface based element (floor, ceiling) |
-| delete_elements             | Delete elements                            |
-| reset_model                | Reset model (delete process model when executing continuous dialog) |
-| modify_element             | Modify element's properties (instance parameters) |
-| search_modules             | Search for available modules              |
-| use_module                 | Use module                                |
-| send_code_to_revit         | Send code to Revit to execute             |
-| color_splash		     | Color elements based on a parameter value	|
-| tag_walls		     | Tag all walls in view            |
+| get_selected_elements | Get currently selected elements |
+| get_material_quantities | Calculate material quantities and takeoffs |
+| ai_element_filter | Intelligent element querying tool for AI assistants |
+| analyze_model_statistics | Analyze model complexity with element counts |
+| create_point_based_element | Create point-based elements (door, window, furniture) |
+| create_line_based_element | Create line-based elements (wall, beam, pipe) |
+| create_surface_based_element | Create surface-based elements (floor, ceiling, roof) |
+| create_grid | Create a grid system with smart spacing generation |
+| create_level | Create levels at specified elevations |
+| create_room | Create and place rooms at specified locations |
+| create_dimensions | Create dimension annotations in the current view |
+| create_structural_framing_system | Create a structural beam framing system |
+| delete_element | Delete elements by ID |
+| operate_element | Operate on elements (select, setColor, hide, etc.) |
+| color_elements | Color elements based on a parameter value |
+| tag_all_walls | Tag all walls in the current view |
+| tag_all_rooms | Tag all rooms in the current view |
+| export_room_data | Export all room data from the project |
+| store_project_data | Store project metadata in local database |
+| store_room_data | Store room metadata in local database |
+| query_stored_data | Query stored project and room data |
+| send_code_to_revit | Send C# code to Revit to execute |
+| say_hello | Display a greeting dialog in Revit (connection test) |
