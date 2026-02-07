@@ -1,6 +1,6 @@
 {
   "name": "@sparx-fire/revit-mcp",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "MCP server for interacting with Autodesk Revit through AI assistants like Claude",
   "main": "index.js",
   "type": "module",
