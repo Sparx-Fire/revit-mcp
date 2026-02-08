@@ -103,7 +103,7 @@ If using a release ZIP, the command set is pre-installed inside the plugin. For 
 1. Build the command set from `commandset/` (see [Development](#development))
 2. Inside the plugin's installation directory, create `Commands/RevitMCPCommandSet/<year>/`
 3. Copy the built DLLs into that folder
-4. Copy `commandset/command.json` into `Commands/RevitMCPCommandSet/`
+4. Copy `command.json` (from repo root) into `Commands/RevitMCPCommandSet/`
 
 ## Supported Tools
 
@@ -155,13 +155,14 @@ Open `revit-mcp.sln` in Visual Studio. The solution contains both the plugin and
 - **Revit 2020-2024**: .NET Framework 4.8 (`Release R20` through `Release R24`)
 - **Revit 2025-2026**: .NET 8 (`Release R25`, `Release R26`)
 
-Building the solution automatically assembles the complete deployable layout in `plugin/revit-mcp-plugin/bin/AddIn <year> <config>/` - the command set is copied into the plugin's `Commands/` folder as part of the build.
+Building the solution automatically assembles the complete deployable layout in `plugin/bin/AddIn <year> <config>/` - the command set is copied into the plugin's `Commands/` folder as part of the build.
 
 ## Project Structure
 
 ```
 revit-mcp/
 ├── revit-mcp.sln    # Combined solution (plugin + commandset)
+├── command.json     # Command set manifest
 ├── server/          # MCP server (TypeScript) - tools exposed to AI clients
 ├── plugin/          # Revit add-in (C#) - WebSocket bridge inside Revit
 ├── commandset/      # Command implementations (C#) - Revit API operations

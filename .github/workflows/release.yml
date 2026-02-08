@@ -86,7 +86,7 @@ jobs:
           )
 
           foreach ($rv in $revitVersions) {
-            $addinDir = "plugin/revit-mcp-plugin/bin/AddIn $($rv.Year) $($rv.Config)"
+            $addinDir = "plugin/bin/AddIn $($rv.Year) $($rv.Config)"
             if (Test-Path $addinDir) {
               $zipName = "$outputDir/revit-mcp-$version-Revit$($rv.Year).zip"
               Compress-Archive -Path "$addinDir/*" -DestinationPath $zipName

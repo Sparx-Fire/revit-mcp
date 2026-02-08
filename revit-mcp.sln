@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.14.35906.104
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "revit-mcp-plugin", "plugin\revit-mcp-plugin\revit-mcp-plugin.csproj", "{43CD0FD7-DF41-4F64-92BE-A0F78666D86F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RevitMCPPlugin", "plugin\RevitMCPPlugin.csproj", "{43CD0FD7-DF41-4F64-92BE-A0F78666D86F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RevitMCPCommandSet", "commandset\revit-mcp-commandset\RevitMCPCommandSet.csproj", "{A23E71AF-675B-41EE-9BD4-D4F3C8BA080D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RevitMCPCommandSet", "commandset\RevitMCPCommandSet.csproj", "{A23E71AF-675B-41EE-9BD4-D4F3C8BA080D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
