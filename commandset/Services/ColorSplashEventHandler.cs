@@ -1,5 +1,6 @@
 using Autodesk.Revit.UI;
 using Newtonsoft.Json.Linq;
+using RevitMCPCommandSet.Utils;
 using RevitMCPSDK.API.Interfaces;
 
 namespace RevitMCPCommandSet.Services
@@ -196,11 +197,7 @@ namespace RevitMCPCommandSet.Services
                             parameterValue = paramValue,
                             count = elementIds.Count,
                             color = new { r = rgb[0], g = rgb[1], b = rgb[2] },
-#if REVIT2024_OR_GREATER
-                            elementIds = elementIds.Select(id => id.Value.ToString()).ToList()
-#else
-                            elementIds = elementIds.Select(id => id.IntegerValue.ToString()).ToList()
-#endif
+                            elementIds = elementIds.Select(id => id.GetValue().ToString()).ToList()
                         });
                     }
 
@@ -262,21 +259,12 @@ namespace RevitMCPCommandSet.Services
                     return parameter.AsValueString() ?? parameter.AsDouble().ToString();
 
                 case StorageType.ElementId:
-#if REVIT2024_OR_GREATER
                     ElementId id = parameter.AsElementId();
                     if (id == ElementId.InvalidElementId)
                         return "None";
 
                     Element element = doc.GetElement(id);
-                    return element?.Name ?? id.Value.ToString();
-#else
-                    ElementId id = parameter.AsElementId();
-                    if (id == ElementId.InvalidElementId)
-                        return "None";
-
-                    Element element = doc.GetElement(id);
-                    return element?.Name ?? id.IntegerValue.ToString();
-#endif
+                    return element?.Name ?? id.GetValue().ToString();
                 case StorageType.Integer:
 #if REVIT2023_OR_GREATER
                     // For Revit 2023+ we should use ForgeTypeId approach

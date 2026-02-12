@@ -31,9 +31,8 @@ namespace RevitMCPCommandSet.Commands.Architecture
         {
             try
             {
-                List<LevelCreationInfo> data = new List<LevelCreationInfo>();
                 // Parse parameters
-                data = parameters["data"].ToObject<List<LevelCreationInfo>>();
+                List<LevelCreationInfo> data = parameters["data"].ToObject<List<LevelCreationInfo>>();
                 if (data == null || data.Count == 0)
                     throw new ArgumentNullException(nameof(data), "No level data provided");
 

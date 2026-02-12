@@ -1,6 +1,7 @@
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 using RevitMCPCommandSet.Models.Common;
+using RevitMCPCommandSet.Utils;
 using RevitMCPSDK.API.Interfaces;
 using LevelCreationInfo = RevitMCPCommandSet.Models.Architecture.LevelInfo;
 
@@ -79,11 +80,7 @@ namespace RevitMCPCommandSet.Services.Architecture
 
                                     createdLevels.Add(new LevelResultInfo
                                     {
-#if REVIT2024_OR_GREATER
-                                        Id = (int)existingLevel.Id.Value,
-#else
-                                        Id = existingLevel.Id.IntegerValue,
-#endif
+                                        Id = existingLevel.Id.GetIntValue(),
                                         UniqueId = existingLevel.UniqueId,
                                         Name = existingLevel.Name,
                                         Elevation = existingLevel.Elevation * 304.8, // Convert to mm
@@ -169,11 +166,7 @@ namespace RevitMCPCommandSet.Services.Architecture
 
                                 createdLevels.Add(new LevelResultInfo
                                 {
-#if REVIT2024_OR_GREATER
-                                    Id = (int)newLevel.Id.Value,
-#else
-                                    Id = newLevel.Id.IntegerValue,
-#endif
+                                    Id = newLevel.Id.GetIntValue(),
                                     UniqueId = newLevel.UniqueId,
                                     Name = newLevel.Name,
                                     Elevation = levelInfo.Elevation,
@@ -196,7 +189,7 @@ namespace RevitMCPCommandSet.Services.Architecture
                     }
                 }
 
-                string message = $"Successfully processed {createdLevels.Count} level(s)";
+                string message;
                 int newCount = createdLevels.Count(l => !l.AlreadyExisted);
                 int existingCount = createdLevels.Count(l => l.AlreadyExisted);
 

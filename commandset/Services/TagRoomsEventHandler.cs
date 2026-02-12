@@ -193,11 +193,7 @@ namespace RevitMCPCommandSet.Services
                 {
                     if (existingTag.Room != null)
                     {
-#if REVIT2024_OR_GREATER
-                        roomsWithExistingTags.Add(existingTag.Room.Id.Value);
-#else
-                        roomsWithExistingTags.Add(existingTag.Room.Id.IntegerValue);
-#endif
+                        roomsWithExistingTags.Add(existingTag.Room.Id.GetValue());
                     }
                 }
 
@@ -242,13 +238,12 @@ namespace RevitMCPCommandSet.Services
                         // Skip unplaced or not enclosed rooms
                         if (room.Area <= 0) continue;
 
-#if REVIT2024_OR_GREATER
                         // Skip rooms that already have tags
-                        if (roomsWithExistingTags.Contains(room.Id.Value))
+                        if (roomsWithExistingTags.Contains(room.Id.GetValue()))
                         {
                             skippedRooms.Add(new
                             {
-                                roomId = room.Id.Value.ToString(),
+                                roomId = room.Id.GetValue().ToString(),
                                 roomName = room.get_Parameter(BuiltInParameter.ROOM_NAME)?.AsString() ?? "Room",
                                 roomNumber = room.Number,
                                 reason = "Room already has a tag in this view"
@@ -293,8 +288,8 @@ namespace RevitMCPCommandSet.Services
 
                                 createdTags.Add(new
                                 {
-                                    tagId = tag.Id.Value.ToString(),
-                                    roomId = room.Id.Value.ToString(),
+                                    tagId = tag.Id.GetValue().ToString(),
+                                    roomId = room.Id.GetValue().ToString(),
                                     roomName = room.get_Parameter(BuiltInParameter.ROOM_NAME)?.AsString() ?? "Room",
                                     roomNumber = room.Number,
                                     location = new
@@ -308,77 +303,8 @@ namespace RevitMCPCommandSet.Services
                         }
                         catch (Exception ex)
                         {
-                            errors.Add($"Error tagging room {room.Id.Value}: {ex.Message}");
+                            errors.Add($"Error tagging room {room.Id.GetValue()}: {ex.Message}");
                         }
-#else
-                        // Skip rooms that already have tags
-                        if (roomsWithExistingTags.Contains(room.Id.IntegerValue))
-                        {
-                            skippedRooms.Add(new
-                            {
-                                roomId = room.Id.IntegerValue.ToString(),
-                                roomName = room.get_Parameter(BuiltInParameter.ROOM_NAME)?.AsString() ?? "Room",
-                                roomNumber = room.Number,
-                                reason = "Room already has a tag in this view"
-                            });
-                            continue;
-                        }
-
-                        try
-                        {
-                            // Get the room's location point
-                            LocationPoint locPoint = room.Location as LocationPoint;
-                            XYZ roomCenter;
-
-                            if (locPoint != null)
-                            {
-                                roomCenter = locPoint.Point;
-                            }
-                            else
-                            {
-                                // Fallback: get center from bounding box
-                                BoundingBoxXYZ bbox = room.get_BoundingBox(activeView);
-                                if (bbox == null) continue;
-                                roomCenter = (bbox.Min + bbox.Max) / 2;
-                            }
-
-                            // Create UV point for room tag
-                            UV tagPoint = new UV(roomCenter.X, roomCenter.Y);
-
-                            // Create the room tag
-                            RoomTag tag = _doc.Create.NewRoomTag(
-                                new LinkElementId(room.Id),
-                                tagPoint,
-                                activeView.Id);
-
-                            if (tag != null)
-                            {
-                                // Set leader if requested
-                                if (_useLeader)
-                                {
-                                    tag.HasLeader = true;
-                                }
-
-                                createdTags.Add(new
-                                {
-                                    tagId = tag.Id.IntegerValue.ToString(),
-                                    roomId = room.Id.IntegerValue.ToString(),
-                                    roomName = room.get_Parameter(BuiltInParameter.ROOM_NAME)?.AsString() ?? "Room",
-                                    roomNumber = room.Number,
-                                    location = new
-                                    {
-                                        x = roomCenter.X * 304.8, // Convert to mm
-                                        y = roomCenter.Y * 304.8,
-                                        z = roomCenter.Z * 304.8
-                                    }
-                                });
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            errors.Add($"Error tagging room {room.Id.IntegerValue}: {ex.Message}");
-                        }
-#endif
                     }
 
                     tran.Commit();
@@ -445,21 +371,17 @@ namespace RevitMCPCommandSet.Services
         /// </summary>
         private FamilySymbol FindRoomTagType(Document doc)
         {
-#if REVIT2024_OR_GREATER
             // If specific tag type ID was specified, try to use it
-            if (!string.IsNullOrEmpty(_tagTypeId))
+            if (!string.IsNullOrEmpty(_tagTypeId) && int.TryParse(_tagTypeId, out int id))
             {
-                if (int.TryParse(_tagTypeId, out int id))
-                {
-                    ElementId elementId = new ElementId(id);
-                    Element element = doc.GetElement(elementId);
+                ElementId elementId = new ElementId(id);
+                Element element = doc.GetElement(elementId);
 
-                    if (element != null && element is FamilySymbol symbol &&
-                        symbol.Category != null &&
-                        symbol.Category.Id.Value == (int)BuiltInCategory.OST_RoomTags)
-                    {
-                        return symbol;
-                    }
+                if (element != null && element is FamilySymbol symbol &&
+                    symbol.Category != null &&
+                    symbol.Category.Id.GetIntValue() == (int)BuiltInCategory.OST_RoomTags)
+                {
+                    return symbol;
                 }
             }
 
@@ -468,40 +390,11 @@ namespace RevitMCPCommandSet.Services
             FamilySymbol roomTagType = tagCollector.OfClass(typeof(FamilySymbol))
                                                   .WhereElementIsElementType()
                                                   .Where(e => e.Category != null &&
-                                                         e.Category.Id.Value == (int)BuiltInCategory.OST_RoomTags)
+                                                         e.Category.Id.GetIntValue() == (int)BuiltInCategory.OST_RoomTags)
                                                   .Cast<FamilySymbol>()
                                                   .FirstOrDefault();
 
             return roomTagType;
-#else
-            // If specific tag type ID was specified, try to use it
-            if (!string.IsNullOrEmpty(_tagTypeId))
-            {
-                if (int.TryParse(_tagTypeId, out int id))
-                {
-                    ElementId elementId = new ElementId(id);
-                    Element element = doc.GetElement(elementId);
-
-                    if (element != null && element is FamilySymbol symbol &&
-                        symbol.Category != null &&
-                        symbol.Category.Id.IntegerValue == (int)BuiltInCategory.OST_RoomTags)
-                    {
-                        return symbol;
-                    }
-                }
-            }
-
-            // Find the first available room tag type
-            FilteredElementCollector tagCollector = new FilteredElementCollector(doc);
-            FamilySymbol roomTagType = tagCollector.OfClass(typeof(FamilySymbol))
-                                                  .WhereElementIsElementType()
-                                                  .Where(e => e.Category != null &&
-                                                         e.Category.Id.IntegerValue == (int)BuiltInCategory.OST_RoomTags)
-                                                  .Cast<FamilySymbol>()
-                                                  .FirstOrDefault();
-
-            return roomTagType;
-#endif
         }
     }
 }

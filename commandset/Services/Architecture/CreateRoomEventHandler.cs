@@ -3,6 +3,7 @@ using Autodesk.Revit.DB.Architecture;
 using Autodesk.Revit.UI;
 using RevitMCPCommandSet.Models.Architecture;
 using RevitMCPCommandSet.Models.Common;
+using RevitMCPCommandSet.Utils;
 using RevitMCPSDK.API.Interfaces;
 
 namespace RevitMCPCommandSet.Services.Architecture
@@ -249,11 +250,7 @@ namespace RevitMCPCommandSet.Services.Architecture
                         // Add to result list
                         createdRooms.Add(new RoomResultInfo
                         {
-#if REVIT2024_OR_GREATER
-                            Id = (int)room.Id.Value,
-#else
-                            Id = room.Id.IntegerValue,
-#endif
+                            Id = room.Id.GetIntValue(),
                             UniqueId = room.UniqueId,
                             Name = roomInfo.Name ?? "Room",
                             Number = roomNumber, // Use the actual assigned number (may differ from requested if made unique)
