@@ -88,6 +88,29 @@ Claude Desktop → Settings → Developer → Edit Config → `claude_desktop_co
 }
 ```
 
+Optional local guardrail with [Armorer Guard](https://github.com/ArmorerLabs/Armorer-Guard):
+
+```json
+{
+    "mcpServers": {
+        "mcp-server-for-revit": {
+            "command": "armorer-guard",
+            "args": [
+                "mcp-proxy",
+                "--",
+                "cmd",
+                "/c",
+                "npx",
+                "-y",
+                "mcp-server-for-revit"
+            ]
+        }
+    }
+}
+```
+
+This wraps the same Revit MCP server with a local proxy that inspects tool-call arguments for prompt injection, credential leakage, exfiltration risk, and dangerous actions before forwarding safe calls to the Revit bridge.
+
 Restart Claude Desktop. When you see the hammer icon, the MCP server is connected.
 
 ![Claude Desktop connection](./assets/claude.png)
