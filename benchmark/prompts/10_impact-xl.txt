@@ -1,0 +1,21 @@
+Impact-XL — blast-radius of a structural deletion (multi-hop dependency).
+
+The current Revit project has levels, walls hosted on those levels, and
+windows hosted on those walls. Using ONLY your project-memory tools — do
+NOT click through the model, do NOT inspect the .rvt by hand.
+
+For the level named "Niveau 0", compute its full structural blast radius:
+everything that would be orphaned or destroyed if that level were deleted —
+- every wall on that level,
+- every window transitively hosted on any of those walls.
+
+Report:
+  1. The number of walls on Niveau 0.
+  2. The number of windows transitively hosted on those walls.
+  3. The total blast radius (walls + windows).
+  4. A breakdown by hop distance from the level (hop 1 = walls, hop 2 =
+     windows), with the count at each hop.
+
+Do not modify anything. Walk the level -> walls -> windows dependency chain
+with your tools in as few calls as possible, rather than re-querying Revit
+element by element.

@@ -1,0 +1,28 @@
+Audit-Trail — ten delete-and-replace cycles with semantic audit trail.
+
+In the current Revit project, perform ten cycles of element replacement.
+Each cycle: pick one of the first ten walls in the project, delete it,
+then create a new wall at the same position and on the same level but
+with a different wall type (use any other wall type than the original
+type of that wall). After replacement, record in your project-memory
+tools the semantic relation that the new wall replaces the old one, with
+a one-line reason ("type swap, cycle N").
+
+After all ten cycles:
+
+  1. Using your project-memory tools, enumerate the audit trail: for
+     every "replaces" relation you recorded, give old wall id, new wall
+     id, the recorded reason, and the timestamp / turn at which the
+     replacement happened.
+
+  2. Confirm that the old walls are no longer alive in the project (they
+     were deleted) but that the audit trail relating them to their
+     replacements is still queryable.
+
+  3. If your project-memory tools have no concept of a semantic
+     "replaces" relation between elements (i.e. you can delete and
+     create but cannot record that one supersedes the other), state
+     this explicitly and finish with the partial work you were able to
+     do — do NOT invent a relation that the tools do not represent.
+
+End with: "<N>/10 replacements done, <M>/10 with audit trail recorded".

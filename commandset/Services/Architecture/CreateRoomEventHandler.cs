@@ -106,7 +106,7 @@ namespace RevitMCPCommandSet.Services.Architecture
                         failureOptions.SetDelayedMiniWarnings(false);
                         tx.SetFailureHandlingOptions(failureOptions);
 
-                        tx.Start();
+                        tx.StartWithSwallowedWarnings();
 
                         // Step 1: Find or determine the level
                         Level level = null;

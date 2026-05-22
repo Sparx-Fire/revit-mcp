@@ -1,0 +1,67 @@
+{
+  "name": "RevitMCPKgCommandSet",
+  "description": "Knowledge Graph v2 — C# native projection of the Revit model (DESIGN-kg-v2.md)",
+  "developer": {
+    "name": "mcp-servers-for-revit-kg-poc",
+    "email": "",
+    "website": "",
+    "organization": "mcp-servers-for-revit-kg-poc"
+  },
+  "commands": [
+    {
+      "commandName": "kg_session_info",
+      "description": "Return KG v2 session metadata: project_id, current turn, node/edge counts, last action summary. Read-only.",
+      "assemblyPath": "RevitMCPKgCommandSet.dll"
+    },
+    {
+      "commandName": "kg_query",
+      "description": "Search KG v2 nodes by type and/or attrs_filter (exact match). Read-only. Returns matching nodes with their attrs and lifecycle.",
+      "assemblyPath": "RevitMCPKgCommandSet.dll"
+    },
+    {
+      "commandName": "kg_diff_since",
+      "description": "Return KG v2 action log entries since a given turn (create/modify/delete/etc.). Read-only.",
+      "assemblyPath": "RevitMCPKgCommandSet.dll"
+    },
+    {
+      "commandName": "kg_get_by_revit_id",
+      "description": "Resolve a Revit ElementId to its KG v2 node (or null if unbound). Read-only.",
+      "assemblyPath": "RevitMCPKgCommandSet.dll"
+    },
+    {
+      "commandName": "kg_traverse",
+      "description": "Multi-hop traversal in the KG v2 from start_id following a path of {edge_type, direction (out|in)} steps. Returns reached node set (deduped).",
+      "assemblyPath": "RevitMCPKgCommandSet.dll"
+    },
+    {
+      "commandName": "kg_detect_drift",
+      "description": "Compare the KG v2 projection against the active Revit document and return divergences (missing_in_kg, orphan_kg_node, tombstoned_but_live, attrs_diverged). Optional node_type filter. Read-only.",
+      "assemblyPath": "RevitMCPKgCommandSet.dll"
+    },
+    {
+      "commandName": "kg_annotate",
+      "description": "Author/replace/delete a semantic (KG-owned) edge. Built-in kinds: replaced_by | tagged | violates_rule | implements_intent | contains. Any other name = a USER-DEFINED edge type, registered on first use (symmetric to user-defined node types); Revit-owned F1 types (at_level, is_type, hosts, bounded_by, connects_at, derived_from) are rejected. Required: src, dst (llm_ids, may be soft-deleted), kind. 'contains' groups existing nodes under a user-defined node (e.g. a Suite containing Rooms). Payload object = upsert/replace; payload null/absent = delete if present. Edges survive Revit re-projection and undo/redo per DESIGN §6.",
+      "assemblyPath": "RevitMCPKgCommandSet.dll"
+    },
+    {
+      "commandName": "kg_create_node",
+      "description": "Create a USER-DEFINED semantic node not derived from Revit (e.g. Suite, Zone, Apartment). Required: node_type (must not collide with a built-in Revit-projected type). Optional: attrs (free-form JSON object, no schema). Returns the new llm_id. Link it to existing nodes with kg_annotate kind=contains. Carries no revit_id, so it is invisible to drift detection and untouched by rescan.",
+      "assemblyPath": "RevitMCPKgCommandSet.dll"
+    },
+    {
+      "commandName": "kg_modify_node",
+      "description": "Modify attrs of a user-defined node (free-form). Required: llm_id, updates (JSON object). Refuses Revit-projected nodes — edit those in Revit, not the KG.",
+      "assemblyPath": "RevitMCPKgCommandSet.dll"
+    },
+    {
+      "commandName": "kg_delete_node",
+      "description": "Soft-delete a user-defined node (history kept). Required: llm_id. Refuses Revit-projected nodes — delete those in Revit and let the projection tombstone them.",
+      "assemblyPath": "RevitMCPKgCommandSet.dll"
+    },
+    {
+      "commandName": "kg_resolve_drift",
+      "description": "Align the KG v2 projection to the live Revit document on a per-entry basis. missing_in_kg → project the Revit element; attrs_diverged → overwrite KG attrs; orphan_kg_node → soft-delete the KG node (history kept); tombstoned_but_live → resurrect + re-sync. action_log appended, F2 annotations and bootstrap nodes preserved. Optional kinds[], node_type, dry_run filters. Non-dry-run requires confirm=\"align-to-revit\".",
+      "assemblyPath": "RevitMCPKgCommandSet.dll"
+    }
+  ]
+}

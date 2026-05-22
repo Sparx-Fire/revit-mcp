@@ -1,0 +1,32 @@
+Q — multi-question session on a small model.
+
+Execute this task NOW with the tools available. Do NOT ask clarifying
+questions — `AskUserQuestion` is not available in this mode. Do NOT
+defer execution or wait for confirmation.
+
+Step 1 — Seed. Create level Q_N0 at elevation 0 (if not present), then
+create 6 walls on Q_N0, all of the same basic wall type, 2700 mm high,
+end-to-end along X:
+- Q_WALL_1 (0,0)→(4000,0)
+- Q_WALL_2 (4000,0)→(8000,0)
+- Q_WALL_3 (8000,0)→(12000,0)
+- Q_WALL_4 (12000,0)→(16000,0)
+- Q_WALL_5 (16000,0)→(20000,0)
+- Q_WALL_6 (20000,0)→(24000,0)
+
+Then on Q_WALL_1, Q_WALL_3, Q_WALL_5 only, create exactly 1 standard
+single-pane window each (so 3 windows total), sill 900 / head 2100,
+centred at the wall midpoint.
+
+Step 2 — Answer these 5 questions in order, one paragraph each, with
+exact counts from your tools (NOT from memory of what you just
+created):
+
+  Q1. How many walls exist on Q_N0?
+  Q2. What is the average wall height across all Q_WALL_* walls (in mm)?
+  Q3. List every window with its host wall name (window_name → host).
+  Q4. Which Q_WALL_* walls have NO window?
+  Q5. What is the total wall length on Q_N0 (sum of all Q_WALL_*
+      lengths) in mm?
+
+End with a one-line summary giving Q1..Q5 as a comma-separated tuple.

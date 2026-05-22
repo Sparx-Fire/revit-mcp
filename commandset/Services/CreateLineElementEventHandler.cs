@@ -168,7 +168,7 @@ namespace RevitMCPCommandSet.Services
                     // Step3 调用通用方法创建族实例
                     using (Transaction transaction = new Transaction(doc, "创建点状构件"))
                     {
-                        transaction.Start();
+                        transaction.StartWithSwallowedWarnings();
                         switch (builtInCategory)
                         {
                             case BuiltInCategory.OST_Walls:

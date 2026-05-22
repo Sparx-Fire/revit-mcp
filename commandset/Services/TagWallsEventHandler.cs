@@ -1,4 +1,5 @@
 using Autodesk.Revit.UI;
+using RevitMCPCommandSet.Utils;
 using RevitMCPSDK.API.Interfaces;
 
 namespace RevitMCPCommandSet.Services
@@ -53,7 +54,7 @@ namespace RevitMCPCommandSet.Services
 
                 using (Transaction tran = new Transaction(doc, "标记墙体"))
                 {
-                    tran.Start();
+                    tran.StartWithSwallowedWarnings();
 
                     // Find the wall tag type
                     FamilySymbol wallTagType = FindWallTagType(doc);

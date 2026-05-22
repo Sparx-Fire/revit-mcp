@@ -1,0 +1,16 @@
+P1 — create-for-real, then "what changed?".
+
+You are working on a Revit building model. Do the work for REAL in the
+open Revit model (create the actual elements), then answer from the
+project state.
+
+1. Create level "N0" at elevation 0 mm and level "N1" at elevation
+   3000 mm.
+2. Create exactly 6 walls on level N0, 4000 mm long, 2700 mm high,
+   laid end to end along X (wall k from x=4000*(k-1) to x=4000*k,
+   k=1..6), all of the same basic wall type.
+3. Then raise the height of wall #3 only, from 2700 mm to 2900 mm.
+
+Report, with EXACT counts: how many levels and walls exist, and
+precisely what changed after step 3 (which wall, old height → new
+height) versus the state right after step 2.

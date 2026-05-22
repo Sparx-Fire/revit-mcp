@@ -1,0 +1,23 @@
+M-Long — thirty consecutive edits with a mid-run differential summary.
+
+Perform these 30 height edits to walls in the current Revit project, one
+at a time, persisting each through your project-memory tools. Do not
+restate the project state after each edit; just do the edit and move on.
+
+  Edits 1-10: walls 1 through 10, set height to 2.80, 2.81, …, 2.89 m
+                (i.e. wall N → height 2.80 + (N-1)/100 for N in 1..10).
+  Edits 11-15: walls 11 through 15, set height to 3.10, 3.12, 3.14, 3.16,
+                3.18 m respectively.
+
+  ──── Mid-run checkpoint, AFTER edit 15 ────
+  Query your project-memory tools for the differential since the start of
+  this scenario. Report concisely: how many walls were modified, the list
+  of (wall id, new height), and the turn-or-step count if your tools
+  expose one. Do NOT re-query the full project — just the diff.
+
+  Edits 16-25: walls 16 through 25, set height to 2.60, 2.61, …, 2.69 m.
+  Edits 26-30: walls 26 through 30, set height to 3.20, 3.21, 3.22, 3.23,
+                3.24 m.
+
+End with a final differential summary covering all 30 edits, plus a
+one-line tally: "<applied>/30 edits persisted".

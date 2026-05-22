@@ -186,7 +186,7 @@ namespace RevitMCPCommandSet.Services
                     Floor floor = null;
                     using (Transaction transaction = new Transaction(doc, "创建面状构件"))
                     {
-                        transaction.Start();
+                        transaction.StartWithSwallowedWarnings();
 
                         switch (builtInCategory)
                         {

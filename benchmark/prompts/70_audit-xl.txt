@@ -1,0 +1,22 @@
+Audit-XL — multi-hop compliance audit on a large model.
+
+The current Revit project contains roughly 500 elements: several levels, many
+walls hosted on those levels, and a large number of windows hosted on those
+walls. Some windows violate a structural rule and you must find every single
+violator using your project-memory tools — do NOT enumerate by clicking
+through the model, work from your tools.
+
+Compliance rule:
+  Every window must have a sill_height of at least 0.9 m AND its host wall
+  must be on a level whose elevation is ≥ 0 m (no basement windows below
+  the sill threshold).
+
+Report:
+  1. The total number of windows checked.
+  2. The list of every violating window: window id (or revit id), its
+     host wall id, the host wall's level name + elevation, and which
+     part of the rule it violates (sill, level, or both).
+  3. A one-line summary: "<violators>/<total> windows violate the rule".
+
+Do not modify anything. Use your project-memory tools to walk the
+window → host wall → level chain rather than re-querying Revit per window.

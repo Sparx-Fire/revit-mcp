@@ -1,0 +1,36 @@
+Drift-Long — long workflow with periodic out-of-band edits to detect.
+
+This scenario simulates a workflow where a user occasionally edits the Revit
+project by hand (deleting an element, moving a wall, changing a sill height)
+without going through your tools. Between turns of this conversation, such
+out-of-band edits MAY have been applied to the active project. Your job is
+to surface every divergence between what your project-memory tools believe
+the project contains and what the live Revit document actually contains.
+
+Run the following six-step audit in order, using only your project-memory
+tools (no manual inspection):
+
+  Step 1. Establish a baseline: list how many walls, windows, and levels
+          your tools see right now, plus the current turn / snapshot id if
+          your tools expose one.
+
+  Step 2. Detect drift: are there any elements present in the live Revit
+          document but missing from your tracked state, or vice versa, or
+          alive in both but with diverging attributes? Enumerate every
+          divergence (element id, kind of drift, before/after). If your
+          tools cannot detect drift by construction, say so explicitly
+          and explain the limitation.
+
+  Step 3. For every drift you found, decide whether to reconcile your
+          tracked state to match Revit, or to flag the divergence for
+          review. State your choice and the reasoning.
+
+  Step 4. Apply this small batch of edits through your tools: raise the
+          first wall's height by 0.1 m, lower the second wall's height by
+          0.1 m, persist each.
+
+  Step 5. Detect drift again. Report.
+
+  Step 6. Final summary: total drifts surfaced across step 2 and step 5,
+          how many were reconciled vs flagged, and a one-line verdict
+          ("project consistent" or "<N> drifts outstanding").

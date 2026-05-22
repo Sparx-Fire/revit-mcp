@@ -1,0 +1,25 @@
+Provenance — supersession chain through tombstones (semantic audit trail).
+
+This scenario tests whether your tools can recover a chain of replacements
+that spans DELETED elements. Execute now; do not ask clarifying questions.
+
+Step 1 — Build a supersession chain. Pick any one existing wall. Then, three
+times in a row: delete the current wall and create a replacement wall at the
+same position and level (use a different wall type each time), and record in
+your project-memory tools the semantic relation that the new wall *replaces*
+the previous one, with a one-line reason. After this you have a chain
+  original (deleted) -> r1 (deleted) -> r2 (deleted) -> r3 (alive)
+with three "replaces" links.
+
+Step 2 — Starting ONLY from the final living wall, reconstruct the full
+supersession history backwards: list every predecessor in order, each with
+its id, whether it is still alive or tombstoned, and the recorded reason for
+that replacement. Walk the relation transitively — do not rely on memory of
+what you just did in Step 1.
+
+Step 3 — If your tools cannot traverse from a live element back through
+deleted predecessors (i.e. no relation persists across deletion), state this
+explicitly and stop — do NOT fabricate a chain.
+
+End with: "supersession depth: <N> recovered (<alive> alive, <tombstoned>
+deleted)".

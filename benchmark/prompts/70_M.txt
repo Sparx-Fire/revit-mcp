@@ -1,0 +1,32 @@
+M — many small edits.
+
+Execute this task NOW with the tools available. Do NOT ask clarifying
+questions — `AskUserQuestion` is not available in this mode. Do NOT
+defer execution or wait for confirmation.
+
+Step 1 — Seed. Create level M_N0 at elevation 0 (if not present), then
+create 6 walls on M_N0, all of the same basic wall type, all 2700 mm
+high, end-to-end along X:
+- M_WALL_1 (0,0)→(4000,0)
+- M_WALL_2 (4000,0)→(8000,0)
+- M_WALL_3 (8000,0)→(12000,0)
+- M_WALL_4 (12000,0)→(16000,0)
+- M_WALL_5 (16000,0)→(20000,0)
+- M_WALL_6 (20000,0)→(24000,0)
+
+Step 2 — Apply these 10 height edits in order, persisting each (NO
+restate between edits, just do them):
+  1. M_WALL_1 height -> 2701
+  2. M_WALL_2 height -> 2702
+  3. M_WALL_3 height -> 2703
+  4. M_WALL_4 height -> 2704
+  5. M_WALL_5 height -> 2705
+  6. M_WALL_6 height -> 2706
+  7. M_WALL_1 height -> 2710
+  8. M_WALL_2 height -> 2720
+  9. M_WALL_3 height -> 2730
+  10. M_WALL_4 height -> 2740
+
+Step 3 — After all 10 edits are persisted, query your tools ONCE and
+report the FINAL height of each M_WALL_1..M_WALL_6 in a table. End with
+a one-line summary stating how many edits were applied.

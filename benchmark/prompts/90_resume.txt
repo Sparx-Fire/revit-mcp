@@ -1,0 +1,32 @@
+Resume — pick up a project after a save/close/reopen cycle.
+
+This is a fresh Claude Code session. You have no memory of any prior turn.
+The Revit document open right now was edited in a previous session that
+is no longer running: roughly twenty new elements were added and a handful
+of existing elements were modified before the .rvt was saved and reopened.
+
+Your task uses only your project-memory tools. Do not assume anything from
+this conversation that those tools cannot independently confirm.
+
+Step 1 — situate yourself.
+  Identify the active project (id, current turn or snapshot index if your
+  tools expose one, total node / element counts). State which tools you
+  used to obtain this.
+
+Step 2 — recover the prior session's diff.
+  Using your tools, enumerate exactly what changed between the very
+  beginning of the project's history and the most recent persisted
+  snapshot: which elements were created, which were modified (with old
+  vs new values), which were deleted. If your tools cannot reach back
+  beyond the current open document (no cross-session history by
+  construction), say so explicitly, name the limitation, and stop here
+  — do not invent a diff.
+
+Step 3 — continue the work.
+  Add two new walls to the project, each on the highest-elevation level,
+  3 m long and 2.7 m high. Use the same wall type as the most recently
+  created wall from the prior session. Persist them through your tools
+  and confirm.
+
+Finish with: "session resumed: <N> prior changes recovered, <M> new walls
+added".

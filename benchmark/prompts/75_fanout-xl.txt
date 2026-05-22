@@ -1,0 +1,25 @@
+Fanout-XL — ten independent queries on the same large model.
+
+Using only your project-memory tools, answer the following ten questions
+about the current Revit project. Each answer must come from your tools, not
+from memory of this conversation or from inspecting the .rvt file by hand.
+Do not modify anything. Answer all ten in this single turn.
+
+  Q1. How many walls does the project contain in total (alive, not deleted)?
+  Q2. Which level hosts the largest number of walls? Report the level name
+      and the count.
+  Q3. List every distinct WallType currently used, with the number of wall
+      instances using it.
+  Q4. What is the mean height of all walls (in meters, two decimals)?
+  Q5. How many windows are NOT hosted by any wall (orphans, if any)?
+  Q6. How many walls have no window hosted on them?
+  Q7. For each level, give the average number of windows per wall on that
+      level (rounded to two decimals).
+  Q8. List every wall whose height is strictly greater than 3.0 m. Give the
+      id and the height.
+  Q9. Are there any walls with a length strictly less than 1.0 m? If yes,
+      list them; if no, say so explicitly.
+  Q10. Sum of (length × height) across all alive walls, in m² (one decimal).
+
+Finish with a one-line summary: "10/10 answered" if you completed every
+question, otherwise list the question numbers you skipped and the reason.

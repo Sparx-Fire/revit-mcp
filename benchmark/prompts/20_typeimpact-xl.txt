@@ -1,0 +1,19 @@
+TypeImpact-XL — shared-dependency ranking across the model.
+
+Using ONLY your project-memory tools (do not click through the model, do
+not inspect the .rvt by hand):
+
+A change to a WallType ripples to every wall of that type and onward to
+every window hosted on those walls. Rank the WallTypes by their "window
+ripple" = the total number of windows transitively hosted on walls of that
+type.
+
+Report, for each WallType actually in use:
+  - the WallType id (and name if available),
+  - the number of wall instances of that type,
+  - the number of windows transitively hosted on those walls,
+sorted by window ripple descending. End with one line: which WallType has
+the largest window ripple, and its size.
+
+Do not modify anything. Use the WallType -> walls -> windows chain; make as
+few tool calls as possible rather than re-querying Revit per wall.

@@ -1,0 +1,23 @@
+S4 — atomic batch with intentional failure.
+
+Execute this task NOW with the tools available. Do NOT ask clarifying
+questions — `AskUserQuestion` is not available in this mode. Do NOT
+defer execution or wait for confirmation.
+
+In ONE single all-or-nothing batch, create exactly 5 new levels:
+1. name "S4_L1", elevation 1000 mm
+2. name "S4_L2", elevation 2000 mm
+3. name "S4_L3", elevation 3000 mm
+4. name "S4_BAD" — INTENTIONALLY INVALID: do NOT supply an elevation
+   for this level. Your project-memory schema requires elevation for a
+   Level; this element is invalid by construction. Submit it exactly
+   as described (do NOT invent an elevation to "fix" it; the whole
+   point is to test atomicity).
+5. name "S4_L5", elevation 5000 mm
+
+The batch MUST be atomic: if any element is invalid, NONE of the 5 may
+persist.
+
+Apply the batch in ONE call, then report from your tools: did the batch
+fail (as expected), and exactly how many levels exist now? It must be
+unchanged from the baseline (no S4_* leaked).

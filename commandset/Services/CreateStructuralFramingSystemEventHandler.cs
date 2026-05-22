@@ -85,7 +85,7 @@ namespace RevitMCPCommandSet.Services
 
                 using (Transaction trans = new Transaction(doc, "Create Beam System"))
                 {
-                    trans.Start();
+                    trans.StartWithSwallowedWarnings();
 
                     // 1. Resolve Level - Find nearest existing level to the target elevation (like walls do)
                     Level level = doc.FindNearestLevel(Parameters.Elevation / 304.8);

@@ -2,6 +2,7 @@
 # Node.js / TypeScript (server/)
 # =============================================================================
 server/build/
+server/build-test/
 server/node_modules/
 server/revit-data.db
 
@@ -371,3 +372,25 @@ FodyWeavers.xsd
 # =============================================================================
 .claude/
 .DS_Store
+
+# Editor vault (not part of the project)
+.obsidian/
+
+# KG benchmark runtime state (per-run, machine-specific)
+.kg-bench/
+.kg-bench-many/
+
+# Revit fixtures & autosave backups. .rvt are large binaries (~5-10 MB) —
+# NOT versioned (decision 2026-05-21): masters (foo.rvt) and backups
+# (foo.0001.rvt) alike stay local. Stage-3 fixture = 500_objs.rvt (see
+# README.md); obtain out-of-band for repro.
+*.rvt
+
+# =============================================================================
+# Local-only material, consolidated under gitignored/ for clarity
+# (decision 2026-05-21). The repo ships ONLY the KG v2 code + benchmark/
+# results (+ README.md). The benchmark harness (kg_bridge/), all
+# design/dev docs (DESIGN-*, BENCHMARK*, BUILD, JOURNAL, DEMO, PR_BODY) and
+# the .rvt fixtures all live under gitignored/.
+# =============================================================================
+gitignored/

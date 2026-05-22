@@ -63,7 +63,7 @@ namespace RevitMCPCommandSet.Services.Architecture
                 {
                     using (Transaction tx = new Transaction(_doc, "Create Level"))
                     {
-                        tx.Start();
+                        tx.StartWithSwallowedWarnings();
 
                         try
                         {

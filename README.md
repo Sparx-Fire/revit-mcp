@@ -1,296 +1,191 @@
-[![Cover Image](./assets/cover.png?v=2)](https://github.com/mcp-servers-for-revit/mcp-servers-for-revit)
+# Fork of `mcp-servers-for-revit` (Knowledge Graph layer)
 
-# mcp-servers-for-revit
+## Overview
 
-**Connect AI assistants to Autodesk Revit via the Model Context Protocol.**
+This is a fork of **mcp-servers-for-revit** that adds a **Knowledge Graph command
+set** (`commandset-kg/`) on top of the base Revit MCP server. Where the upstream
+tools let an agent read and edit a Revit model, the KG layer gives that agent a
+persistent, queryable representation of the project as a **graph of nodes and
+typed edges** — a structured memory it can reason over across a long session.
 
-mcp-servers-for-revit enables AI clients like Claude, Cline, and other MCP-compatible tools to read, create, modify, and delete elements in Revit projects. It consists of three components: a TypeScript MCP server that exposes tools to AI, a C# Revit add-in that bridges commands into Revit, and a command set that implements the actual Revit API operations.
+The graph stays faithful to the live model through a **`DocumentChanged` hook**:
+every create / modify / delete in Revit is projected into the graph
+automatically, so the BIM model and its graph view never drift apart — no manual
+sync, no stale snapshot.
 
-> [!NOTE]
-> This is a fork of the original [revit-mcp](https://github.com/mcp-servers-for-revit/revit-mcp) project with additional tools and functionality improvements.
+Its main value is to add an **annotative and relational layer that is independent
+of Revit's native element structure**. On top of the geometry and parameters
+Revit already exposes, the graph carries explicit typed relationships and
+semantic annotations (e.g. `replaced_by`, `violates_rule`, hosting and dependency
+chains). This unlocks a **semantic and relational level of reading** — multi-hop
+queries, impact and provenance analysis, drift detection — that the flat Revit
+API does not offer natively.
 
-## Architecture
+### Nodes: a structural base, then beyond it
 
-```mermaid
-flowchart LR
-    Client["MCP Client<br/>(Claude, Cline, etc.)"]
-    Server["MCP Server<br/><code>server/</code>"]
-    Plugin["Revit Plugin<br/><code>plugin/</code>"]
-    CommandSet["Command Set<br/><code>commandset/</code>"]
-    Revit["Revit API"]
+The graph has two tiers of nodes. The **structural base** mirrors the Revit model:
+node types derived from BIM elements (`Wall`, `Room`, `Level`, `Window`, `Door`,
+`WallType`, …), each with a fixed schema and a `revit_id` binding, kept in sync by
+the `DocumentChanged` hook. But the graph is not limited to that mirror — an agent
+can also **create user-defined node types on the fly, with custom properties**
+(`kg_v2_create_node`, e.g. a `Suite` or `Zone` carrying free-form attrs), and link
+them to the structural nodes (`contains` membership edges). These nodes carry no
+`revit_id`: they live purely in the graph, untouched by Revit's projection and
+drift detection, and persist across sessions.
 
-    Client <-->|stdio| Server
-    Server <-->|WebSocket| Plugin
-    Plugin -->|loads| CommandSet
-    CommandSet -->|executes| Revit
-```
+So the graph deliberately **steps outside Revit's base element schema** and evolves
+toward something else — a richer, partly agent-authored domain model of the project
+(programmatic units, design intent, semantic groupings) layered on top of the BIM
+elements rather than constrained by them.
 
-The **MCP Server** (TypeScript) translates tool calls from AI clients into WebSocket messages. The **Revit Plugin** (C#) runs inside Revit, listens for those messages, and dispatches them to the **Command Set** (C#), which executes the actual Revit API operations and returns results back up the chain.
+## Benchmark
 
-## Requirements
+An early benchmark pitted a **flat key-value store** (`store_*_data`) against an
+**external KG sidecar**, with a large gap in the KG's favour. The cause was
+**typing**: the flat store is schemaless (a generic *rooms* table), so to fake
+persisting a BIM project the agent **mis-types walls/windows into the rooms
+table** — fabrications a structural check catches (~10/17 scenarios), at ~3.5–7×
+the cost per *correct* answer. The typed KG schema (Wall/Window/Level + relations)
+fabricated none. But that was a *weak* baseline (a generic store, not Revit). A
+later benchmark therefore re-tests the graph against the strongest baseline:
+querying the **live Revit model directly** (A).
 
-- **Node.js 18+** (for the MCP server)
-- **Autodesk Revit 2020 - 2026** (any supported version)
+It compares **A** (Revit-direct, no-KG baseline) against **C** (the KG layer) on
+a ~500-element model, over query, edit, relational and temporal scenarios.
+Cost = real output tokens (Claude Code runs); correctness scored claim-vs-state.
 
-## Quick Start (Using a Release)
+- **Reliability** — C ≥ A on every scenario, **0 fabrication** on both sides.
+- **Capability** — C does what the flat Revit API structurally cannot:
+  cross-session diff, queryable audit trail (`replaced_by`), provenance through
+  deleted elements, structural drift detection.
+- **Cost** — with the indexed read-API, C is **~2–3× cheaper** on scoped
+  query/edit; it costs more only when it does strictly more (e.g. 30/30 edits vs
+  A's 25/30) or for capabilities A lacks.
+- **Takeaway** — the graph's advantage is real on **relational/temporal**
+  workloads and scales with **query scope, not model size**.
 
-1. Download the ZIP for your Revit version from the [Releases](https://github.com/mcp-servers-for-revit/mcp-servers-for-revit/releases) page (e.g., `mcp-servers-for-revit-v1.0.0-Revit2025.zip`)
+Full numbers, per-scenario verdicts and prompts: **`benchmark/`** (`VERDICT.md` +
+the two PDFs).
 
-2. Extract the ZIP and copy the contents to your Revit addins folder:
+## Install
+
+> Prerequisites (Revit version, .NET SDK, Node, NuGet, base add-in setup) are
+> described in the upstream project — see `README_MAIN.md`.
+
+1. **Build the add-in + command sets** (Debug auto-deploys to
+   `%AppData%\Autodesk\Revit\Addins\<ver>\`; `R25` = Revit 2025 — use your version):
    ```
-   %AppData%\Autodesk\Revit\Addins\<your Revit version>\
+   dotnet build plugin/RevitMCPPlugin.csproj             -c "Debug R25"
+   dotnet build commandset/RevitMCPCommandSet.csproj     -c "Debug R25"
+   dotnet build commandset-kg/RevitMCPKgCommandSet.csproj -c "Debug R25"
    ```
-   After copying you should have:
+2. **Build the MCP server (TypeScript):**
    ```
-   Addins/2025/
-   ├── mcp-servers-for-revit.addin
-   └── revit_mcp_plugin/
-       ├── RevitMCPPlugin.dll
-       ├── ...
-       └── Commands/
-           └── RevitMCPCommandSet/
-               ├── command.json
-               └── 2025/
-                   ├── RevitMCPCommandSet.dll
-                   └── ...
+   cd server && npm install && npm run build
    ```
+3. **In Revit:** load the add-in → ribbon *Revit MCP Plugin* → *Settings* (enable
+   the command sets) → **Switch** (starts the socket on `localhost:8080`) → open
+   your `.rvt`.
 
-3. Configure the MCP server in your AI client (see [MCP Server Setup](#mcp-server-setup))
+4. **Open Claude Code from the repo root.** First **activate the virtual
+   environment** from the upstream setup — it provides **Node.js**, which the MCP
+   server runs on (no Node available ⇒ no MCP communication at all). A `.mcp.json`
+   is committed here (runs `server/build/index.js`, `kg_v2_*` on by default), so
+   launching Claude Code from this directory auto-registers the `revit` server.
+   Approve it once; `/mcp` should then list the `revit` tools.
 
-4. Start Revit — if prompted about an unknown add-in, click **Always Load**
+5. Happy prompting!
 
-5. In Revit, click the **Settings** button on the mcp-servers-for-revit ribbon tab, enable the commands you want to use, and click **Save**
+## Fork file tree
 
-## MCP Server Setup
+| Rendering | Marker | Meaning |
+|---|---|---|
+| ⚫ **black** (context) | ` ` (plain line) | **original** — upstream |
+| 🔴 **red** | `-` at line start | **new** — KG layer |
+| 🟢 **green** | `+` at line start | **modified** — by the KG layer |
 
-The MCP server is published as an npm package and can be run directly with `npx`.
+> Relies on GitHub's `diff` coloring. The `-` / `+` markers are coloring
+> artifacts (not a real git diff).
 
-**Claude Code**
-
-Run this in a **terminal** (not inside Claude Code):
-
-```bash
-claude mcp add mcp-server-for-revit -- cmd /c npx -y mcp-server-for-revit
+```diff
+   .
+   ├── commandset/                            Revit command set (core)
+-  │   ├── Commands/BatchSetParametersCommand.cs
+-  │   ├── Services/BatchSetParametersEventHandler.cs
++  │   ├── Services/*EventHandler.cs  (14: swallow-warnings)
+-  │   ├── Models/Common/
+-  │   ├── Utils/SwallowWarningsPreprocessor.cs
+   │   └── … (Commands/Services/Models, upstream)
+-  ├── commandset-kg/                         the KG — read-only C# projection
+-  │   ├── Commands/
+-  │   │     • kg_v2_query
+-  │   │     • kg_v2_traverse
+-  │   │     • kg_v2_diff_since
+-  │   │     • kg_v2_get_by_revit_id
+-  │   │     • kg_v2_session_info
+-  │   │     • kg_v2_detect_drift
+-  │   │     • kg_v2_resolve_drift
+-  │   │     • kg_v2_annotate
+-  │   ├── Core/
+-  │   │     • ProjectKg
+-  │   │     • Projection
+-  │   │     • PathTraversal
+-  │   │     • NodeQueryFilter
+-  │   │     • NodeAggregator
+-  │   │     • NodeJoiner
+-  │   ├── Services/
+-  │   │     • KgV2DocumentWatcher
+-  │   │     • EsDeltaSink
+-  │   │     • KgV2ExtensibleStorage
+-  │   └── Models/
+-  │         • KgQueryResult
+-  │         • KgTraverseResult
+-  │         • KgNodeView
+-  │         • NodeViewBuilder
+-  ├── commandset-kg-tests/                   KG C# tests
+   ├── plugin/                                Revit add-in (ribbon, socket :8080)
++  │   └── Core/SocketService.cs  (socket frame reassembly)
+   ├── server/                                MCP server (TypeScript)
+-  │   ├── src/kg-v2/                         KG tools client/mode
+-  │   ├── src/tools/  kg_v2_*.ts             KG MCP tools
+   │   ├── src/tools/ … · src/ …              (tools + core, upstream)
+-  │   ├── scripts/  kg-v2-*.mjs              KG probes
++  │   └── package.json · tsconfig.json  (KG deps + config)
+   ├── tests/                                 upstream C# tests
+-  ├── benchmark/                             benchmark results
+-  │   ├── VERDICT.md
+-  │   ├── all-scenarios.pdf
+-  │   ├── llm-responses.pdf
+-  │   └── prompts/  (13 .txt)
+-  ├── reference/
+   ├── assets/ · scripts/
+   ├── README_MAIN.md                         upstream README
+-  ├── README.md                              (this file)
++  ├── command.json
++  ├── .gitignore
+   └── mcp-servers-for-revit.sln · global.json
 ```
 
-**Claude Desktop**
+## New (KG layer)
 
-Claude Desktop → Settings → Developer → Edit Config → `claude_desktop_config.json`:
+- **`commandset-kg/`** — a C# projection of the Revit model maintained by the
+  `DocumentChanged` hook, exposed **read-only** (`kg_v2_*`). Its indexed read-API
+  (`NodeAggregator` = count/sum/mean/min/max + group_by; `NodeJoiner` = edge-aware
+  join-projection; `PathTraversal` = variable-depth reachability) runs
+  relational/aggregated queries graph-side. The KG commands ship as a
+  **dedicated command set** (`RevitMCPKgCommandSet`, with its own `command.json`),
+  registered independently of the upstream one — the layer is purely additive.
+- **`server/src/kg-v2/` + `tools/kg_v2_*.ts`** — the `kg_v2_*` MCP tools (the
+  read-only API into the projection).
+- **`commandset-kg-tests/`**, **`server/scripts/kg-v2-*.mjs`** — tests and probes.
+- **`benchmark/`** — benchmark deliverables (verdict, PDFs, prompts).
 
-```json
-{
-    "mcpServers": {
-        "mcp-server-for-revit": {
-            "command": "cmd",
-            "args": ["/c", "npx", "-y", "mcp-server-for-revit"]
-        }
-    }
-}
-```
+## Modified (upstream touched by the KG layer)
 
-Restart Claude Desktop. When you see the hammer icon, the MCP server is connected.
+- **`commandset/Services/…EventHandler.cs`** (14) — `SwallowWarningsPreprocessor`
+  wired onto the write Transactions (suppresses geometric warnings).
+- **`plugin/Core/SocketService.cs`** — reassembly of incoming JSON-RPC frames.
+- **`server/package.json` · `tsconfig.json`** — dependencies and config for the
+  KG tools.
+- **`.gitignore`** — exclusion rules.
 
-![Claude Desktop connection](./assets/claude.png)
-
-## Revit Plugin Setup
-
-If using a release ZIP, the plugin is already included. For manual installation:
-
-1. Build the plugin from `plugin/` (see [Development](#development))
-2. Copy `mcp-servers-for-revit.addin` to `%AppData%\Autodesk\Revit\Addins\<version>\`
-3. Copy the `revit_mcp_plugin/` folder to the same addins directory
-
-## Command Set Setup
-
-If using a release ZIP, the command set is pre-installed inside the plugin. For manual installation:
-
-1. Build the command set from `commandset/` (see [Development](#development))
-2. Inside the plugin's installation directory, create `Commands/RevitMCPCommandSet/<year>/`
-3. Copy the built DLLs into that folder
-4. Copy `command.json` (from repo root) into `Commands/RevitMCPCommandSet/`
-
-## Supported Tools
-
-| Tool | Description |
-| ---- | ----------- |
-| `get_current_view_info` | Get current active view info |
-| `get_current_view_elements` | Get elements from the current active view |
-| `get_available_family_types` | Get available family types in current project |
-| `get_selected_elements` | Get currently selected elements |
-| `get_material_quantities` | Calculate material quantities and takeoffs |
-| `ai_element_filter` | Intelligent element querying tool for AI assistants |
-| `analyze_model_statistics` | Analyze model complexity with element counts |
-| `create_point_based_element` | Create point-based elements (door, window, furniture) |
-| `create_line_based_element` | Create line-based elements (wall, beam, pipe) |
-| `create_surface_based_element` | Create surface-based elements (floor, ceiling, roof) |
-| `create_grid` | Create a grid system with smart spacing generation |
-| `create_level` | Create levels at specified elevations |
-| `create_room` | Create and place rooms at specified locations |
-| `create_dimensions` | Create dimension annotations in the current view |
-| `create_structural_framing_system` | Create a structural beam framing system |
-| `delete_element` | Delete elements by ID |
-| `operate_element` | Operate on elements (select, setColor, hide, etc.) |
-| `color_elements` | Color elements based on a parameter value |
-| `tag_all_walls` | Tag all walls in the current view |
-| `tag_all_rooms` | Tag all rooms in the current view |
-| `export_room_data` | Export all room data from the project |
-| `store_project_data` | Store project metadata in local database |
-| `store_room_data` | Store room metadata in local database |
-| `query_stored_data` | Query stored project and room data |
-| `send_code_to_revit` | Send C# code to Revit to execute |
-| `say_hello` | Display a greeting dialog in Revit (connection test) |
-
-## Testing
-
-The test project uses [Nice3point.TUnit.Revit](https://github.com/Nice3point/RevitUnit) to run integration tests against a live Revit instance. No separate addin installation is required — the framework injects into the running Revit process automatically.
-
-### Prerequisites
-
-- **.NET 10 SDK** — required by Nice3point.Revit.Sdk 6.1.0. Install via `winget install Microsoft.DotNet.SDK.10`
-- **Autodesk Revit 2026** (or 2025) — must be installed and licensed on your machine
-
-### Running Tests
-
-1. Open Revit 2026 (or 2025) and wait for it to fully load
-2. Run the tests from the command line:
-
-```bash
-# For Revit 2026
-dotnet test -c Debug.R26 -r win-x64 tests/commandset
-
-# For Revit 2025
-dotnet test -c Debug.R25 -r win-x64 tests/commandset
-```
-
-> **Note:** The `-r win-x64` flag is required on ARM64 machines because the Revit API assemblies are x64-only.
-
-Alternatively, you can use `dotnet run`:
-
-```bash
-cd tests/commandset
-dotnet run -c Debug.R26
-```
-
-### IDE Support
-
-- **JetBrains Rider** — enable "Testing Platform support" in Settings > Build, Execution, Deployment > Unit Testing > Testing Platform
-- **Visual Studio** — tests should be discoverable through the standard Test Explorer
-
-### Test Structure
-
-| Directory | Purpose |
-|-----------|---------|
-| `tests/commandset/AssemblyInfo.cs` | Global `[assembly: TestExecutor<RevitThreadExecutor>]` registration |
-| `tests/commandset/Architecture/` | Tests for level and room creation commands |
-| `tests/commandset/DataExtraction/` | Tests for model statistics, room data export, and material quantities |
-| `tests/commandset/ColorSplashTests.cs` | Tests for color override functionality |
-| `tests/commandset/TagRoomsTests.cs` | Tests for room tagging functionality |
-
-### Writing New Tests
-
-Test classes inherit from `RevitApiTest` and use TUnit's async assertion API:
-
-```csharp
-public class MyTests : RevitApiTest
-{
-    private static Document _doc;
-
-    [Before(HookType.Class)]
-    [HookExecutor<RevitThreadExecutor>]
-    public static void Setup()
-    {
-        _doc = Application.NewProjectDocument(UnitSystem.Imperial);
-    }
-
-    [After(HookType.Class)]
-    [HookExecutor<RevitThreadExecutor>]
-    public static void Cleanup()
-    {
-        _doc?.Close(false);
-    }
-
-    [Test]
-    public async Task MyTest_Condition_ExpectedResult()
-    {
-        var elements = new FilteredElementCollector(_doc)
-            .WhereElementIsNotElementType()
-            .ToElements();
-
-        await Assert.That(elements.Count).IsGreaterThan(0);
-    }
-}
-```
-
-## Development
-
-### MCP Server
-
-```bash
-cd server
-npm install
-npm run build
-```
-
-The server compiles TypeScript to `server/build/`. During development you can run it directly with `npx tsx server/src/index.ts`.
-
-### Revit Plugin + Command Set
-
-Open `mcp-servers-for-revit.sln` in Visual Studio. The solution contains both the plugin and command set projects. Build configurations target Revit 2020-2026:
-
-- **Revit 2020-2024**: .NET Framework 4.8 (`Release R20` through `Release R24`)
-- **Revit 2025-2026**: .NET 8 (`Release R25`, `Release R26`)
-
-Building the solution automatically assembles the complete deployable layout in `plugin/bin/AddIn <year> <config>/` - the command set is copied into the plugin's `Commands/` folder as part of the build.
-
-## Project Structure
-
-```
-mcp-servers-for-revit/
-├── mcp-servers-for-revit.sln    # Combined solution (plugin + commandset + tests)
-├── command.json     # Command set manifest
-├── server/          # MCP server (TypeScript) - tools exposed to AI clients
-├── plugin/          # Revit add-in (C#) - WebSocket bridge inside Revit
-├── commandset/      # Command implementations (C#) - Revit API operations
-├── tests/           # Integration tests (C#) - TUnit tests against live Revit
-├── assets/          # Images for documentation
-├── .github/         # CI/CD workflows, contributing guide, code of conduct
-├── LICENSE
-└── README.md
-```
-
-## Releasing
-
-A single `v*` tag drives the entire release. The [release workflow](.github/workflows/release.yml) automatically:
-
-- Builds the Revit plugin + command set for Revit 2020-2026
-- Creates a GitHub release with `mcp-servers-for-revit-vX.Y.Z-Revit<year>.zip` assets
-- Publishes the MCP server to npm as [`mcp-server-for-revit`](https://www.npmjs.com/package/mcp-server-for-revit)
-
-To create a release:
-
-1. Run the bump script (updates `server/package.json`, `server/package-lock.json`, and `plugin/Properties/AssemblyInfo.cs`, then commits and tags):
-   ```powershell
-   ./scripts/release.ps1 -Version X.Y.Z
-   ```
-
-2. Push to trigger the workflow:
-   ```bash
-   git push origin main --tags
-   ```
-
-> [!NOTE]
-> npm publish uses [trusted publishing](https://docs.npmjs.com/trusted-publishers/) via OIDC — no npm token is required. Provenance attestation is generated automatically.
-
-## Acknowledgements
-
-This project is a fork of the work by the [mcp-servers-for-revit](https://github.com/mcp-servers-for-revit) team. The original repositories:
-
-- [revit-mcp](https://github.com/mcp-servers-for-revit/revit-mcp) - MCP server
-- [revit-mcp-plugin](https://github.com/mcp-servers-for-revit/revit-mcp-plugin) - Revit plugin
-- [revit-mcp-commandset](https://github.com/mcp-servers-for-revit/revit-mcp-commandset) - Command set
-
-Thank you to the original authors for creating the foundation that this project builds upon.
-
-## License
-
-[MIT](LICENSE)
