@@ -55,28 +55,37 @@ namespace RevitMCPCommandSet.Services
                 if (!FilterSetting.Validate(out string errorMessage))
                     throw new Exception(errorMessage);
                 // 获取指定条件元素的Id
-                var elementList = GetFilteredElements(doc, FilterSetting);
-                if (elementList == null || !elementList.Any())
+                var elementIds = GetFilteredElementIds(doc, FilterSetting);
+                if (elementIds == null || !elementIds.Any())
                     throw new Exception("未在项目中找到指定元素，请检查过滤器设置是否正确");
-                // 过滤器最大个数限制
-                string message = "";
-                if (FilterSetting.MaxElements > 0)
-                {
-                    if (elementList.Count > FilterSetting.MaxElements)
-                    {
-                        elementList = elementList.Take(FilterSetting.MaxElements).ToList();
-                        message = $"。此外，符合过滤条件的共有 {elementList.Count} 个元素，仅显示前 {FilterSetting.MaxElements} 个";
-                    }
-                }
 
-                // 获取指定Id元素的信息
+                int totalCount = elementIds.Count;
+                int limit = FilterSetting.GetEffectiveLimit();
+                int offset = FilterSetting.GetEffectiveOffset();
+                var pageIds = elementIds.Skip(offset).Take(limit).ToList();
+                bool hasMore = offset + pageIds.Count < totalCount;
+
+                var elementList = pageIds
+                    .Select(id => doc.GetElement(id))
+                    .Where(e => e != null)
+                    .ToList();
+
+                // 获取指定Id元素的信息（仅当前页）
                 elementInfoList = GetElementFullInfo(doc, elementList);
+
+                string message = hasMore
+                    ? $"。符合过滤条件的共有 {totalCount} 个元素，当前返回第 {offset + 1}–{offset + elementInfoList.Count} 个"
+                    : "";
 
                 Result = new AIResult<List<object>>
                 {
                     Success = true,
-                    Message = $"成功获取{elementInfoList.Count}个元素信息，具体信息储存在Response属性中"+ message,
+                    Message = $"成功获取{elementInfoList.Count}个元素信息，具体信息储存在Response属性中" + message,
                     Response = elementInfoList,
+                    TotalCount = totalCount,
+                    HasMore = hasMore,
+                    Offset = offset,
+                    Limit = limit,
                 };
             }
             catch (Exception ex)
@@ -113,6 +122,46 @@ namespace RevitMCPCommandSet.Services
         }
 
         /// <summary>
+        /// 根据过滤器设置获取Revit文档中符合条件的元素Id，支持多条件组合过滤
+        /// </summary>
+        public static IList<ElementId> GetFilteredElementIds(Document doc, FilterSetting settings)
+        {
+            if (doc == null)
+                throw new ArgumentNullException(nameof(doc));
+            if (settings == null)
+                throw new ArgumentNullException(nameof(settings));
+            if (!settings.Validate(out string errorMessage))
+            {
+                System.Diagnostics.Trace.WriteLine($"过滤器设置无效: {errorMessage}");
+                return new List<ElementId>();
+            }
+
+            List<string> appliedFilters = new List<string>();
+            List<ElementId> result = new List<ElementId>();
+
+            if (settings.IncludeTypes && settings.IncludeInstances)
+            {
+                result.AddRange(GetElementIdsByKind(doc, settings, true, appliedFilters));
+                result.AddRange(GetElementIdsByKind(doc, settings, false, appliedFilters));
+            }
+            else if (settings.IncludeInstances)
+            {
+                result = GetElementIdsByKind(doc, settings, false, appliedFilters);
+            }
+            else if (settings.IncludeTypes)
+            {
+                result = GetElementIdsByKind(doc, settings, true, appliedFilters);
+            }
+
+            if (appliedFilters.Count > 0)
+            {
+                System.Diagnostics.Trace.WriteLine($"已应用 {appliedFilters.Count} 个过滤条件: {string.Join(", ", appliedFilters)}");
+                System.Diagnostics.Trace.WriteLine($"最终筛选结果: 共找到 {result.Count} 个元素");
+            }
+            return result;
+        }
+
+        /// <summary>
         /// 根据过滤器设置获取Revit文档中符合条件的元素，支持多条件组合过滤
         /// </summary>
         /// <param name="doc">Revit文档</param>
@@ -120,57 +169,18 @@ namespace RevitMCPCommandSet.Services
         /// <returns>符合所有过滤条件的元素集合</returns>
         public static IList<Element> GetFilteredElements(Document doc, FilterSetting settings)
         {
-            if (doc == null)
-                throw new ArgumentNullException(nameof(doc));
-            if (settings == null)
-                throw new ArgumentNullException(nameof(settings));
-            // 验证过滤器设置
-            if (!settings.Validate(out string errorMessage))
-            {
-                System.Diagnostics.Trace.WriteLine($"过滤器设置无效: {errorMessage}");
-                return new List<Element>();
-            }
-            // 记录过滤条件应用情况
-            List<string> appliedFilters = new List<string>();
-            List<Element> result = new List<Element>();
-            // 如果同时包含类型和实例，需要分别过滤再合并结果
-            if (settings.IncludeTypes && settings.IncludeInstances)
-            {
-                // 收集类型元素
-                result.AddRange(GetElementsByKind(doc, settings, true, appliedFilters));
-
-                // 收集实例元素
-                result.AddRange(GetElementsByKind(doc, settings, false, appliedFilters));
-            }
-            else if (settings.IncludeInstances)
-            {
-                // 仅收集实例元素
-                result = GetElementsByKind(doc, settings, false, appliedFilters);
-            }
-            else if (settings.IncludeTypes)
-            {
-                // 仅收集类型元素
-                result = GetElementsByKind(doc, settings, true, appliedFilters);
-            }
-
-            // 输出应用的过滤器信息
-            if (appliedFilters.Count > 0)
-            {
-                System.Diagnostics.Trace.WriteLine($"已应用 {appliedFilters.Count} 个过滤条件: {string.Join(", ", appliedFilters)}");
-                System.Diagnostics.Trace.WriteLine($"最终筛选结果: 共找到 {result.Count} 个元素");
-            }
-            return result;
-
+            return GetFilteredElementIds(doc, settings)
+                .Select(id => doc.GetElement(id))
+                .Where(e => e != null)
+                .ToList();
         }
 
         /// <summary>
-        /// 根据元素种类(类型或实例)获取满足过滤条件的元素
+        /// 根据元素种类(类型或实例)获取满足过滤条件的元素Id
         /// </summary>
-        private static List<Element> GetElementsByKind(Document doc, FilterSetting settings, bool isElementType, List<string> appliedFilters)
+        private static List<ElementId> GetElementIdsByKind(Document doc, FilterSetting settings, bool isElementType, List<string> appliedFilters)
         {
-            // 创建基础的FilteredElementCollector
             FilteredElementCollector collector;
-            // 检查是否需要过滤当前视图可见的元素 (仅适用于实例元素)
             if (!isElementType && settings.FilterVisibleInCurrentView && doc.ActiveView != null)
             {
                 collector = new FilteredElementCollector(doc, doc.ActiveView.Id);
@@ -180,7 +190,7 @@ namespace RevitMCPCommandSet.Services
             {
                 collector = new FilteredElementCollector(doc);
             }
-            // 根据元素种类过滤
+
             if (isElementType)
             {
                 collector = collector.WhereElementIsElementType();
@@ -191,9 +201,8 @@ namespace RevitMCPCommandSet.Services
                 collector = collector.WhereElementIsNotElementType();
                 appliedFilters.Add("仅元素实例");
             }
-            // 创建过滤器列表
+
             List<ElementFilter> filters = new List<ElementFilter>();
-            // 1. 类别过滤器
             if (!string.IsNullOrWhiteSpace(settings.FilterCategory))
             {
                 BuiltInCategory category;
@@ -205,17 +214,15 @@ namespace RevitMCPCommandSet.Services
                 filters.Add(categoryFilter);
                 appliedFilters.Add($"类别：{settings.FilterCategory}");
             }
-            // 2. 元素类型过滤器
             if (!string.IsNullOrWhiteSpace(settings.FilterElementType))
             {
 
                 Type elementType = null;
-                // 尝试解析类型名称的各种可能形式
                 string[] possibleTypeNames = new string[]
                 {
-                    settings.FilterElementType,                                    // 原始输入
-                    $"Autodesk.Revit.DB.{settings.FilterElementType}, RevitAPI",  // Revit API命名空间
-                    $"{settings.FilterElementType}, RevitAPI"                      // 完整限定带程序集
+                    settings.FilterElementType,
+                    $"Autodesk.Revit.DB.{settings.FilterElementType}, RevitAPI",
+                    $"{settings.FilterElementType}, RevitAPI"
                 };
                 foreach (string typeName in possibleTypeNames)
                 {
@@ -234,17 +241,14 @@ namespace RevitMCPCommandSet.Services
                     throw new Exception($"警告：无法找到类型 '{settings.FilterElementType}'");
                 }
             }
-            // 3. 族符号过滤器 (仅适用于元素实例)
             if (!isElementType && settings.FilterFamilySymbolId > 0)
             {
                 ElementId symbolId = new ElementId(settings.FilterFamilySymbolId);
-                // 检查元素是否存在且是族类型
                 Element symbolElement = doc.GetElement(symbolId);
                 if (symbolElement != null && symbolElement is FamilySymbol)
                 {
                     FamilyInstanceFilter familyFilter = new FamilyInstanceFilter(doc, symbolId);
                     filters.Add(familyFilter);
-                    // 添加更详细的族信息日志
                     FamilySymbol symbol = symbolElement as FamilySymbol;
                     string familyName = symbol.Family?.Name ?? "未知族";
                     string symbolName = symbol.Name ?? "未知类型";
@@ -256,21 +260,16 @@ namespace RevitMCPCommandSet.Services
                     System.Diagnostics.Trace.WriteLine($"警告：ID为 {settings.FilterFamilySymbolId} 的元素{(symbolElement == null ? "不存在" : "不是有效的FamilySymbol")} (实际类型: {elementType})");
                 }
             }
-            // 4. 空间范围过滤器
             if (settings.BoundingBoxMin != null && settings.BoundingBoxMax != null)
             {
-                // 转换为Revit的XYZ坐标 (毫米转内部单位)
                 XYZ minXYZ = JZPoint.ToXYZ(settings.BoundingBoxMin);
                 XYZ maxXYZ = JZPoint.ToXYZ(settings.BoundingBoxMax);
-                // 创建空间范围Outline对象
                 Outline outline = new Outline(minXYZ, maxXYZ);
-                // 创建相交过滤器
                 BoundingBoxIntersectsFilter boundingBoxFilter = new BoundingBoxIntersectsFilter(outline);
                 filters.Add(boundingBoxFilter);
                 appliedFilters.Add($"空间范围过滤：Min({settings.BoundingBoxMin.X:F2}, {settings.BoundingBoxMin.Y:F2}, {settings.BoundingBoxMin.Z:F2}), " +
                                   $"Max({settings.BoundingBoxMax.X:F2}, {settings.BoundingBoxMax.Y:F2}, {settings.BoundingBoxMax.Z:F2}) mm");
             }
-            // 应用组合过滤器
             if (filters.Count > 0)
             {
                 ElementFilter combinedFilter = filters.Count == 1
@@ -282,7 +281,18 @@ namespace RevitMCPCommandSet.Services
                     System.Diagnostics.Trace.WriteLine($"应用了{filters.Count}个过滤条件的组合过滤器 (逻辑AND关系)");
                 }
             }
-            return collector.ToElements().ToList();
+            return collector.ToElementIds().ToList();
+        }
+
+        /// <summary>
+        /// 根据元素种类(类型或实例)获取满足过滤条件的元素
+        /// </summary>
+        private static List<Element> GetElementsByKind(Document doc, FilterSetting settings, bool isElementType, List<string> appliedFilters)
+        {
+            return GetElementIdsByKind(doc, settings, isElementType, appliedFilters)
+                .Select(id => doc.GetElement(id))
+                .Where(e => e != null)
+                .ToList();
         }
 
         /// <summary>

@@ -324,3 +324,39 @@ public class ScheduleGroupInfo
     [JsonProperty("formatData")]
     public string FormatData { get; set; } = string.Empty;
 }
+
+/// <summary>
+///     Result of schedule creation
+/// </summary>
+public class ScheduleCreationResult
+{
+    [JsonProperty("success")]
+    public bool Success { get; set; }
+
+    [JsonProperty("message")]
+    public string Message { get; set; } = string.Empty;
+
+    [JsonProperty("scheduleId")]
+    public long ScheduleId { get; set; }
+
+    [JsonProperty("scheduleUniqueId")]
+    public string ScheduleUniqueId { get; set; } = string.Empty;
+
+    [JsonProperty("scheduleName")]
+    public string ScheduleName { get; set; } = string.Empty;
+
+    [JsonProperty("categoryName")]
+    public string CategoryName { get; set; } = string.Empty;
+
+    [JsonProperty("templateId")]
+    public string TemplateId { get; set; } = string.Empty;
+
+    [JsonProperty("fieldCount")]
+    public int FieldCount { get; set; }
+
+    [JsonProperty("filterCount")]
+    public int FilterCount { get; set; }
+
+    [JsonProperty("warnings")]
+    public List<string> Warnings { get; set; } = new List<string>();
+}

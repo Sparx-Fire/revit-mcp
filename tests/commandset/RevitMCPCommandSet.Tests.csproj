@@ -8,4 +8,7 @@
     <PackageReference Include="Nice3point.Revit.Api.RevitAPI" Version="$(RevitVersion).*" />
     <PackageReference Include="Nice3point.TUnit.Revit" Version="$(RevitVersion).*" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\commandset\RevitMCPCommandSet.csproj" />
+  </ItemGroup>
 </Project>

@@ -62,6 +62,9 @@ Restart Claude Desktop. When you see the hammer icon, the MCP server is connecte
 | `query_stored_data` | Query stored project and room data |
 | `send_code_to_revit` | Send C# code to Revit to execute |
 | `say_hello` | Display a greeting dialog in Revit (connection test) |
+| `batch_execute` | Execute up to 20 Revit commands in one round-trip with partial success |
+
+See the [full project README](https://github.com/mcp-servers-for-revit/mcp-servers-for-revit#batch_execute-example) for a usage example.
 
 ## Development
 

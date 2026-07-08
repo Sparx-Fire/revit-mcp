@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
@@ -23,7 +24,7 @@ namespace revit_mcp_plugin.Core
         private int _port = 8080;
         private UIApplication _uiApp;
         private ICommandRegistry _commandRegistry;
-        private ILogger _logger;
+        private Logger _logger;
         private CommandExecutor _commandExecutor;
 
         public static SocketService Instance
@@ -50,49 +51,32 @@ namespace revit_mcp_plugin.Core
             set => _port = value;
         }
 
-        // 初始化
+        public Logger Logger => _logger;
+
         // Initialization.
         public void Initialize(UIApplication uiApp)
         {
             _uiApp = uiApp;
 
-            // 初始化事件管理器
-            // Initialize ExternalEventManager
             ExternalEventManager.Instance.Initialize(uiApp, _logger);
 
-            // 记录当前 Revit 版本
-            // Get the current Revit version.
             var versionAdapter = new RevitMCPSDK.API.Utils.RevitVersionAdapter(_uiApp.Application);
             string currentVersion = versionAdapter.GetRevitVersion();
             _logger.Info("当前 Revit 版本: {0}\nCurrent Revit version: {0}", currentVersion);
 
-
-
-            // 创建命令执行器
-            // Create CommandExecutor
             _commandExecutor = new CommandExecutor(_commandRegistry, _logger);
 
-            // 加载配置并注册命令
-            // Load configuration and register commands.
             ConfigurationManager configManager = new ConfigurationManager(_logger);
             configManager.LoadConfiguration();
-            
 
-            //// 从配置中读取服务端口
-            //// Read the service port from the configuration.
-            //if (configManager.Config.Settings.Port > 0)
-            //{
-            //    _port = configManager.Config.Settings.Port;
-            //}
-            _port = 8080; // 固定端口号 - Hard-wired port number.
+            _port = 8080;
 
-            // 加载命令
-            // Load command.
             CommandManager commandManager = new CommandManager(
                 _commandRegistry, _logger, configManager, _uiApp);
             commandManager.LoadCommands();
 
             _logger.Info($"Socket service initialized on port {_port}");
+            _logger.Info("Command metrics log: {0}", _logger.MetricsLogFilePath);
         }
 
         public void Start()
@@ -109,11 +93,13 @@ namespace revit_mcp_plugin.Core
                 {
                     IsBackground = true
                 };
-                _listenerThread.Start();              
+                _listenerThread.Start();
+                RibbonStatusManager.UpdateStatus(_isRunning);
             }
             catch (Exception)
             {
                 _isRunning = false;
+                RibbonStatusManager.UpdateStatus(_isRunning);
             }
         }
 
@@ -132,6 +118,8 @@ namespace revit_mcp_plugin.Core
                 {
                     _listenerThread.Join(1000);
                 }
+
+                RibbonStatusManager.UpdateStatus(_isRunning);
             }
             catch (Exception)
             {
@@ -175,8 +163,6 @@ namespace revit_mcp_plugin.Core
 
                 while (_isRunning && tcpClient.Connected)
                 {
-                    // 读取客户端消息
-                    // Read client messages.
                     int bytesRead = 0;
 
                     try
@@ -185,25 +171,17 @@ namespace revit_mcp_plugin.Core
                     }
                     catch (IOException)
                     {
-                        // 客户端断开连接
-                        // Client disconnected.
                         break;
                     }
 
                     if (bytesRead == 0)
                     {
-                        // 客户端断开连接
-                        // Client disconnected.
                         break;
                     }
 
                     string message = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-                    System.Diagnostics.Trace.WriteLine($"收到消息: {message}\nReceived message: {message}");
-
                     string response = ProcessJsonRPCRequest(message);
 
-                    // 发送响应
-                    // Send response.
                     byte[] responseData = Encoding.UTF8.GetBytes(response);
                     stream.Write(responseData, 0, responseData.Length);
                 }
@@ -220,77 +198,147 @@ namespace revit_mcp_plugin.Core
 
         private string ProcessJsonRPCRequest(string requestJson)
         {
-            JsonRPCRequest request;
+            JsonRPCRequest request = null;
+            string commandName = "unknown";
+            var stopwatch = Stopwatch.StartNew();
 
             try
             {
-                // 解析JSON-RPC请求
-                // Parse JSON-RPC requests.
                 request = JsonConvert.DeserializeObject<JsonRPCRequest>(requestJson);
 
-                // 验证请求格式是否有效
-                // Verify that the request format is valid.
                 if (request == null || !request.IsValid())
                 {
-                    return CreateErrorResponse(
+                    string response = CreateErrorResponse(
                         null,
                         JsonRPCErrorCodes.InvalidRequest,
                         "Invalid JSON-RPC request"
                     );
+                    LogRequestMetrics(commandName, stopwatch, response, false, "Invalid JSON-RPC request");
+                    return response;
                 }
 
-                // 查找命令
-                // Search for the command in the registry.
-                if (!_commandRegistry.TryGetCommand(request.Method, out var command))
+                commandName = request.Method;
+                string responseJson = _commandExecutor.ExecuteCommand(request);
+                bool success = IsSuccessResponse(responseJson);
+                string errorDetails = success ? null : ExtractErrorDetails(responseJson);
+                LogRequestMetrics(commandName, stopwatch, responseJson, success, errorDetails);
+
+                if (string.Equals(commandName, CommandExecutor.BatchExecuteMethod, StringComparison.OrdinalIgnoreCase)
+                    && success)
                 {
-                    return CreateErrorResponse(request.Id, JsonRPCErrorCodes.MethodNotFound,
-                        $"Method '{request.Method}' not found");
+                    LogBatchSubCommandMetrics(responseJson);
                 }
 
-                // 执行命令
-                // Execute command.
-                try
-                {                
-                    object result = command.Execute(request.GetParamsObject(), request.Id);
-
-                    return CreateSuccessResponse(request.Id, result);
-                }
-                catch (Exception ex)
-                {
-                    return CreateErrorResponse(request.Id, JsonRPCErrorCodes.InternalError, ex.Message);
-                }
+                return responseJson;
             }
-            catch (JsonException)
+            catch (JsonException ex)
             {
-                // JSON解析错误
-                // JSON parsing error.
-                return CreateErrorResponse(
+                string response = CreateErrorResponse(
                     null,
                     JsonRPCErrorCodes.ParseError,
                     "Invalid JSON"
                 );
+                LogRequestMetrics(commandName, stopwatch, response, false, ex.ToString());
+                return response;
             }
             catch (Exception ex)
             {
-                // 处理请求时的其他错误
-                // Catch other errors produced when processing requests.
-                return CreateErrorResponse(
-                    null,
+                string response = CreateErrorResponse(
+                    request?.Id,
                     JsonRPCErrorCodes.InternalError,
-                    $"Internal error: {ex.Message}"
+                    $"Internal error: {ex.Message}",
+                    new { stackTrace = ex.ToString(), revitMessage = ex.Message }
                 );
+                LogRequestMetrics(commandName, stopwatch, response, false, ex.ToString());
+                return response;
             }
         }
 
-        private string CreateSuccessResponse(string id, object result)
+        private void LogRequestMetrics(
+            string command,
+            Stopwatch stopwatch,
+            string responseJson,
+            bool success,
+            string errorDetails)
         {
-            var response = new JsonRPCSuccessResponse
-            {
-                Id = id,
-                Result = result is JToken jToken ? jToken : JToken.FromObject(result)
-            };
+            stopwatch.Stop();
+            _logger.LogCommandMetrics(
+                command,
+                stopwatch.ElapsedMilliseconds,
+                success,
+                Encoding.UTF8.GetByteCount(responseJson ?? string.Empty),
+                errorDetails);
+        }
 
-            return response.ToJson();
+        private void LogBatchSubCommandMetrics(string responseJson)
+        {
+            try
+            {
+                var response = JObject.Parse(responseJson);
+                var results = response["result"]?["results"] as JArray;
+                if (results == null)
+                    return;
+
+                foreach (var item in results)
+                {
+                    var command = item["command"]?.ToString() ?? "unknown";
+                    var success = item["success"]?.Value<bool>() ?? false;
+                    string errorDetails = null;
+
+                    if (!success)
+                    {
+                        var error = item["error"];
+                        errorDetails = error?["data"]?["stackTrace"]?.ToString()
+                            ?? error?["message"]?.ToString();
+                    }
+
+                    var itemJson = item.ToString(Formatting.None);
+                    _logger.LogCommandMetrics(
+                        $"{CommandExecutor.BatchExecuteMethod}:{command}",
+                        0,
+                        success,
+                        Encoding.UTF8.GetByteCount(itemJson),
+                        errorDetails);
+                }
+            }
+            catch
+            {
+                // Metrics logging should not affect command execution.
+            }
+        }
+
+        private static bool IsSuccessResponse(string responseJson)
+        {
+            try
+            {
+                var token = JObject.Parse(responseJson);
+                return token["error"] == null;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static string ExtractErrorDetails(string responseJson)
+        {
+            try
+            {
+                var token = JObject.Parse(responseJson);
+                var error = token["error"];
+                if (error == null)
+                    return null;
+
+                var data = error["data"];
+                if (data?["stackTrace"] != null)
+                    return data["stackTrace"].ToString();
+
+                return error["message"]?.ToString();
+            }
+            catch
+            {
+                return responseJson;
+            }
         }
 
         private string CreateErrorResponse(string id, int code, string message, object data = null)

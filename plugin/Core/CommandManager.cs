@@ -63,6 +63,15 @@ namespace revit_mcp_plugin.Core
                         continue;
                     }
 
+                    if (string.IsNullOrWhiteSpace(commandConfig.AssemblyPath)
+                        || commandConfig.AssemblyPath.StartsWith("plugin:", StringComparison.OrdinalIgnoreCase))
+                    {
+                        _logger.Info(
+                            "Skipping plugin built-in command: {0}\nSkipping plugin built-in command: {0}",
+                            commandConfig.CommandName);
+                        continue;
+                    }
+
                     // 检查版本兼容性
                     // Check Revit version compatibility.
                     if (commandConfig.SupportedRevitVersions != null &&

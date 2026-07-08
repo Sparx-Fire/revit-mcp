@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "mcp-server-for-revit-local": {
+      "command": "node",
+      "args": ["${workspaceFolder}/server/build/index.js"]
+    }
+  }
+}

@@ -79,6 +79,16 @@
       "assemblyPath": "RevitMCPCommandSet.dll"
     },
     {
+      "commandName": "export_tep_data",
+      "description": "Aggregate structured TEP data: building footprint, total area, storey count, per-level areas, volume, rooms by purpose",
+      "assemblyPath": "RevitMCPCommandSet.dll"
+    },
+    {
+      "commandName": "export_room_finish_data",
+      "description": "Export room finish data: wall/floor/ceiling finish parameters, boundary face materials and areas (read-only)",
+      "assemblyPath": "RevitMCPCommandSet.dll"
+    },
+    {
       "commandName": "get_material_quantities",
       "description": "Calculate material quantities and takeoffs with area and volume calculations per material",
       "assemblyPath": "RevitMCPCommandSet.dll"
@@ -89,8 +99,18 @@
       "assemblyPath": "RevitMCPCommandSet.dll"
     },
     {
+      "commandName": "validate_schedule",
+      "description": "Compare schedule element counts against model elements for Doors, Windows, or Floors",
+      "assemblyPath": "RevitMCPCommandSet.dll"
+    },
+    {
       "commandName": "create_grid",
       "description": "Create grid system with smart spacing generation for project layout (alphabetic/numeric naming)",
+      "assemblyPath": "RevitMCPCommandSet.dll"
+    },
+    {
+      "commandName": "configure_grid_display",
+      "description": "Configure 2D grid extents and bubble display on floor plans for existing grids",
       "assemblyPath": "RevitMCPCommandSet.dll"
     },
     {
@@ -122,6 +142,51 @@
       "commandName": "create_dimensions",
       "description": "Create dimension annotations between elements or points in the current view",
       "assemblyPath": "RevitMCPCommandSet.dll"
+    },
+    {
+      "commandName": "dimension_room_walls",
+      "description": "Create chained wall dimensions for a room on the active floor plan",
+      "assemblyPath": "RevitMCPCommandSet.dll"
+    },
+    {
+      "commandName": "create_door_schedule",
+      "description": "Export structured door schedule data grouped by family type with mark, size, level, and count",
+      "assemblyPath": "RevitMCPCommandSet.dll"
+    },
+    {
+      "commandName": "create_window_schedule",
+      "description": "Export structured window schedule data grouped by family type with mark, size, level, and count",
+      "assemblyPath": "RevitMCPCommandSet.dll"
+    },
+    {
+      "commandName": "create_floor_schedule",
+      "description": "Export structured floor schedule data grouped by family type with mark, size, level, and count",
+      "assemblyPath": "RevitMCPCommandSet.dll"
+    },
+    {
+      "commandName": "create_schedule",
+      "description": "Create a ViewSchedule from project template with fields, filters, sorting, and grouping",
+      "assemblyPath": "RevitMCPCommandSet.dll"
+    },
+    {
+      "commandName": "create_sheet",
+      "description": "Create a sheet with a project title block",
+      "assemblyPath": "RevitMCPCommandSet.dll"
+    },
+    {
+      "commandName": "place_view_on_sheet",
+      "description": "Place a view or schedule on a sheet at coordinates in millimeters",
+      "assemblyPath": "RevitMCPCommandSet.dll"
+    },
+    {
+      "commandName": "create_finish_schedule",
+      "description": "Create a room finish schedule from export_room_finish_data with project template support",
+      "assemblyPath": "RevitMCPCommandSet.dll"
+    },
+    {
+      "commandName": "batch_execute",
+      "description": "Execute multiple Revit commands in one request with partial success (plugin built-in, max 20 commands)",
+      "assemblyPath": "plugin:builtin"
     }
   ]
 }

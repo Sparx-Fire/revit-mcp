@@ -30,8 +30,15 @@ namespace revit_mcp_plugin.UI
             FeaturesListView.ItemsSource = currentCommands;
             // Load command sets
             LoadCommandSets();
+            LoadServerSettings();
             // Initial state
             NoSelectionTextBlock.Visibility = Visibility.Visible;
+        }
+
+        private void LoadServerSettings()
+        {
+            var settings = PluginSettingsStore.LoadSettings();
+            AutoStartCheckBox.IsChecked = settings.AutoStartOnLaunch;
         }
 
         private void LoadCommandSets()
@@ -76,6 +83,23 @@ namespace revit_mcp_plugin.UI
                             // Loop through each command
                             foreach (var command in commandSetData.Commands)
                             {
+                                if (!string.IsNullOrEmpty(command.AssemblyPath) &&
+                                    command.AssemblyPath.StartsWith("plugin:", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    var builtInConfig = new CommandConfig
+                                    {
+                                        CommandName = command.CommandName,
+                                        Description = command.Description,
+                                        AssemblyPath = command.AssemblyPath,
+                                        Enabled = true,
+                                        SupportedRevitVersions = versionDirectories.ToArray()
+                                    };
+
+                                    newCommandSet.Commands.Add(builtInConfig);
+                                    availableCommandNames.Add(command.CommandName);
+                                    continue;
+                                }
+
                                 // 创建一个命令配置，但通过检查文件夹确定支持的版本
                                 List<string> supportedCommandVersions = new List<string>();
                                 string dllBasePath = null;
@@ -151,7 +175,10 @@ namespace revit_mcp_plugin.UI
                 if (File.Exists(registryFilePath))
                 {
                     string registryJson = File.ReadAllText(registryFilePath);
-                    var registry = JsonConvert.DeserializeObject<CommandRegistryJson>(registryJson);
+                    var frameworkConfig = JsonConvert.DeserializeObject<FrameworkConfig>(registryJson);
+                    var registry = frameworkConfig != null
+                        ? new CommandRegistryJson { Commands = frameworkConfig.Commands, Settings = frameworkConfig.Settings }
+                        : JsonConvert.DeserializeObject<CommandRegistryJson>(registryJson);
                     if (registry?.Commands != null)
                     {
                         // Keep only valid commands
@@ -176,8 +203,7 @@ namespace revit_mcp_plugin.UI
                         if (validCommands.Count != registry.Commands.Count)
                         {
                             registry.Commands = validCommands;
-                            string updatedJson = JsonConvert.SerializeObject(registry, Formatting.Indented);
-                            File.WriteAllText(registryFilePath, updatedJson);
+                            SaveRegistry(registry);
                         }
                     }
                 }
@@ -241,6 +267,9 @@ namespace revit_mcp_plugin.UI
             {
                 foreach (var command in currentCommands)
                 {
+                    if (command.IsBuiltIn)
+                        continue;
+
                     command.Enabled = true;
                 }
 
@@ -256,6 +285,9 @@ namespace revit_mcp_plugin.UI
             {
                 foreach (var command in currentCommands)
                 {
+                    if (command.IsBuiltIn)
+                        continue;
+
                     command.Enabled = false;
                 }
 
@@ -269,12 +301,16 @@ namespace revit_mcp_plugin.UI
             try
             {
                 string registryFilePath = PathManager.GetCommandRegistryFilePath();
-                // 读取现有的注册表以保留完整的命令信息
+                // 读取现有的注册表以保留完整的命令信息和设置
                 Dictionary<string, CommandConfig> existingCommandsDict = new Dictionary<string, CommandConfig>();
+                ServiceSettings existingSettings = PluginSettingsStore.LoadSettings();
                 if (File.Exists(registryFilePath))
                 {
                     string registryJson = File.ReadAllText(registryFilePath);
-                    var existingRegistry = JsonConvert.DeserializeObject<CommandRegistryJson>(registryJson);
+                    var frameworkConfig = JsonConvert.DeserializeObject<FrameworkConfig>(registryJson);
+                    var existingRegistry = frameworkConfig != null
+                        ? new CommandRegistryJson { Commands = frameworkConfig.Commands, Settings = frameworkConfig.Settings }
+                        : JsonConvert.DeserializeObject<CommandRegistryJson>(registryJson);
                     if (existingRegistry?.Commands != null)
                     {
                         foreach (var cmd in existingRegistry.Commands)
@@ -282,10 +318,17 @@ namespace revit_mcp_plugin.UI
                             existingCommandsDict[cmd.CommandName] = cmd;
                         }
                     }
+
+                    if (existingRegistry?.Settings != null)
+                    {
+                        existingSettings = existingRegistry.Settings;
+                    }
                 }
                 // 创建新的registry对象
                 CommandRegistryJson registry = new CommandRegistryJson();
                 registry.Commands = new List<CommandConfig>();
+                registry.Settings = existingSettings ?? new ServiceSettings();
+                registry.Settings.AutoStartOnLaunch = AutoStartCheckBox.IsChecked == true;
                 // 收集所有"已启用"的命令
                 foreach (var commandSet in commandSets)
                 {
@@ -309,6 +352,9 @@ namespace revit_mcp_plugin.UI
 
                     foreach (var command in commandSet.Commands)
                     {
+                        if (command.IsBuiltIn)
+                            continue;
+
                         // 只添加启用的命令到注册表
                         if (command.Enabled)
                         {
@@ -352,9 +398,8 @@ namespace revit_mcp_plugin.UI
                     enabledFeaturesText += $"• {commandSetName}: {command.CommandName}\n";
                 }
                 // 序列化并保存到文件
-                string json = JsonConvert.SerializeObject(registry, Formatting.Indented);
-                File.WriteAllText(registryFilePath, json);
-                MessageBox.Show($"Command set settings successfully saved!\n\nEnabled {enabledCount} commands:\n{enabledFeaturesText}",
+                SaveRegistry(registry);
+                MessageBox.Show($"Settings saved successfully!\n\nEnabled {enabledCount} commands:\n{enabledFeaturesText}",
                               "Settings Saved", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
@@ -362,6 +407,18 @@ namespace revit_mcp_plugin.UI
                 MessageBox.Show($"Error saving settings: {ex.Message}", "Error",
                               MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        private static void SaveRegistry(CommandRegistryJson registry)
+        {
+            string registryFilePath = PathManager.GetCommandRegistryFilePath();
+            var frameworkConfig = new FrameworkConfig
+            {
+                Commands = registry.Commands ?? new List<CommandConfig>(),
+                Settings = registry.Settings ?? new ServiceSettings()
+            };
+            string json = JsonConvert.SerializeObject(frameworkConfig, Formatting.Indented);
+            File.WriteAllText(registryFilePath, json);
         }
 
         private void OpenFolderButton_Click(object sender, RoutedEventArgs e)
@@ -373,6 +430,19 @@ namespace revit_mcp_plugin.UI
             catch (Exception ex)
             {
                 MessageBox.Show($"Error opening Commands folder: {ex.Message}", "Error",
+                              MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void OpenLogsFolderButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                Process.Start("explorer.exe", PathManager.GetLogsDirectoryPath());
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error opening Logs folder: {ex.Message}", "Error",
                               MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
@@ -389,6 +459,7 @@ namespace revit_mcp_plugin.UI
     public class CommandRegistryJson
     {
         public List<CommandConfig> Commands { get; set; } = new List<CommandConfig>();
+        public ServiceSettings Settings { get; set; } = new ServiceSettings();
     }
 
     public class CommandJson

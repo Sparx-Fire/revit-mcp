@@ -55,6 +55,8 @@ namespace RevitMCPCommandSet.Services
                 }
 
                 List<GridCreationResult> createdGrids = new List<GridCreationResult>();
+                List<Grid> createdGridElements = new List<Grid>();
+                List<string> displayWarnings = new List<string>();
 
                 // Get existing grid names for duplicate checking
                 var existingGridNames = new FilteredElementCollector(doc)
@@ -105,6 +107,7 @@ namespace RevitMCPCommandSet.Services
                         Line gridLine = Line.CreateBound(startPoint, endPoint);
                         Grid grid = Grid.Create(doc, gridLine);
                         grid.Name = uniqueLabel;
+                        createdGridElements.Add(grid);
 
 #if REVIT2024_OR_GREATER
                         long gridId = grid.Id.Value;
@@ -161,6 +164,7 @@ namespace RevitMCPCommandSet.Services
                         Line gridLine = Line.CreateBound(startPoint, endPoint);
                         Grid grid = Grid.Create(doc, gridLine);
                         grid.Name = uniqueLabel;
+                        createdGridElements.Add(grid);
 
 #if REVIT2024_OR_GREATER
                         long gridId = grid.Id.Value;
@@ -179,6 +183,15 @@ namespace RevitMCPCommandSet.Services
                         });
                     }
 
+                    if (Parameters.ConfigureDisplayOnAllPlans && createdGridElements.Count > 0)
+                    {
+                        var displayResult = GridDisplayHelper.ConfigureGrids(
+                            doc,
+                            createdGridElements,
+                            GridDisplayHelper.FromCreationInfo(Parameters));
+                        displayWarnings.AddRange(displayResult.Warnings);
+                    }
+
                     trans.Commit();
                 }
 
@@ -186,9 +199,17 @@ namespace RevitMCPCommandSet.Services
                 string message = $"Successfully created {createdGrids.Count} grids " +
                                  $"({Parameters.XCount} X-axis + {Parameters.YCount} Y-axis)";
 
+                if (Parameters.ConfigureDisplayOnAllPlans)
+                    message += ". Grid display configured on all floor plans.";
+
                 if (renamedCount > 0)
                 {
                     message += $". {renamedCount} grid(s) were renamed to avoid duplicates.";
+                }
+
+                if (displayWarnings.Count > 0)
+                {
+                    message += $" {displayWarnings.Count} display warning(s) were recorded.";
                 }
 
                 Result = new AIResult<List<GridCreationResult>>

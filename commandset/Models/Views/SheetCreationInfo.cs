@@ -81,3 +81,39 @@ public class SheetCreationInfo
     [JsonProperty("parameters")]
     public Dictionary<string, object> Parameters { get; set; }
 }
+
+/// <summary>
+///     Result of sheet creation
+/// </summary>
+public class SheetCreationResult
+{
+    [JsonProperty("success")]
+    public bool Success { get; set; }
+
+    [JsonProperty("message")]
+    public string Message { get; set; } = string.Empty;
+
+    [JsonProperty("sheetId")]
+    public long SheetId { get; set; }
+
+    [JsonProperty("sheetUniqueId")]
+    public string SheetUniqueId { get; set; } = string.Empty;
+
+    [JsonProperty("sheetNumber")]
+    public string SheetNumber { get; set; } = string.Empty;
+
+    [JsonProperty("sheetName")]
+    public string SheetName { get; set; } = string.Empty;
+
+    [JsonProperty("titleBlockTypeId")]
+    public long TitleBlockTypeId { get; set; }
+
+    [JsonProperty("titleBlockFamilyName")]
+    public string TitleBlockFamilyName { get; set; } = string.Empty;
+
+    [JsonProperty("titleBlockTypeName")]
+    public string TitleBlockTypeName { get; set; } = string.Empty;
+
+    [JsonProperty("warnings")]
+    public List<string> Warnings { get; set; } = new List<string>();
+}

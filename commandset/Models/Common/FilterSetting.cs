@@ -60,10 +60,39 @@ namespace RevitMCPCommandSet.Models.Common
         [JsonProperty("boundingBoxMax")]
         public JZPoint BoundingBoxMax { get; set; } = null;
         /// <summary>
-        /// 最大元素数量限制
+        /// 最大返回元素数量（分页大小）。默认 500。
+        /// </summary>
+        [JsonProperty("limit")]
+        public int Limit { get; set; } = 500;
+
+        /// <summary>
+        /// 跳过的元素数量（分页偏移）。默认 0。
+        /// </summary>
+        [JsonProperty("offset")]
+        public int Offset { get; set; } = 0;
+
+        /// <summary>
+        /// 最大元素数量限制（已弃用，请使用 limit）
         /// </summary>
         [JsonProperty("maxElements")]
-        public int MaxElements { get; set; } = 50; 
+        public int MaxElements { get; set; } = 0;
+
+        /// <summary>
+        /// 解析有效的分页大小：limit 优先，其次 maxElements，最后默认 500。
+        /// </summary>
+        public int GetEffectiveLimit()
+        {
+            if (Limit > 0)
+                return Limit;
+            if (MaxElements > 0)
+                return MaxElements;
+            return 500;
+        }
+
+        /// <summary>
+        /// 解析有效的分页偏移（不小于 0）。
+        /// </summary>
+        public int GetEffectiveOffset() => Math.Max(0, Offset);
         /// <summary>
         /// 验证过滤器设置的有效性，检查潜在的冲突
         /// </summary>

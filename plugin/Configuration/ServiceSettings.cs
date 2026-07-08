@@ -22,5 +22,12 @@ namespace revit_mcp_plugin.Configuration
         [JsonProperty("port")]
         public int Port { get; set; } = 8080;
 
+        /// <summary>
+        /// <para>Автозапуск MCP-сервера при открытии Revit</para>
+        /// <para>Automatically start the MCP server when Revit opens.</para>
+        /// </summary>
+        [JsonProperty("autoStartOnLaunch")]
+        public bool AutoStartOnLaunch { get; set; } = true;
+
     }
 }

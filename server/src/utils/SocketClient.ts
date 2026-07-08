@@ -1,73 +1,205 @@
 import * as net from "net";
 
+const CONNECT_TIMEOUT_MS = 5000;
+const COMMAND_TIMEOUT_MS = 120000;
+
 export class RevitClientConnection {
   host: string;
   port: number;
   socket: net.Socket;
   isConnected: boolean = false;
+  private intentionallyClosed: boolean = false;
+  private connectPromise: Promise<void> | null = null;
+  private disconnectCallbacks: Array<() => void> = [];
   responseCallbacks: Map<string, (response: string) => void> = new Map();
   buffer: string = "";
 
   constructor(host: string, port: number) {
     this.host = host;
     this.port = port;
-    this.socket = new net.Socket();
-    this.setupSocketListeners();
+    this.socket = this.createSocket();
   }
 
-  private setupSocketListeners(): void {
-    this.socket.on("connect", () => {
+  private createSocket(): net.Socket {
+    const socket = new net.Socket();
+    this.setupSocketListeners(socket);
+    return socket;
+  }
+
+  private setupSocketListeners(socket: net.Socket): void {
+    socket.on("connect", () => {
       this.isConnected = true;
     });
 
-    this.socket.on("data", (data) => {
-      // 将接收到的数据添加到缓冲区
+    socket.on("data", (data) => {
       const dataString = data.toString();
       this.buffer += dataString;
-
-      // 尝试解析完整的JSON响应
       this.processBuffer();
     });
 
-    this.socket.on("close", () => {
-      this.isConnected = false;
+    socket.on("close", () => {
+      this.handleDisconnect();
     });
 
-    this.socket.on("error", (error) => {
+    socket.on("error", (error) => {
       console.error("RevitClientConnection error:", error);
-      this.isConnected = false;
+      this.handleDisconnect();
     });
+  }
+
+  public onDisconnect(callback: () => void): void {
+    this.disconnectCallbacks.push(callback);
+  }
+
+  private notifyDisconnect(): void {
+    for (const callback of this.disconnectCallbacks) {
+      callback();
+    }
+  }
+
+  private handleDisconnect(): void {
+    this.notifyDisconnect();
+    this.isConnected = false;
+    this.connectPromise = null;
+    this.buffer = "";
+
+    for (const [requestId, callback] of this.responseCallbacks) {
+      callback(
+        JSON.stringify({
+          jsonrpc: "2.0",
+          id: requestId,
+          error: {
+            code: -32000,
+            message: "Connection to Revit lost",
+          },
+        })
+      );
+    }
+    this.responseCallbacks.clear();
+  }
+
+  private resetSocket(): void {
+    this.socket.removeAllListeners();
+    if (!this.socket.destroyed) {
+      this.socket.destroy();
+    }
+    this.socket = this.createSocket();
+    this.isConnected = false;
+    this.connectPromise = null;
+    this.buffer = "";
+  }
+
+  public connect(): Promise<void> {
+    if (this.isConnected) {
+      return Promise.resolve();
+    }
+
+    if (this.connectPromise) {
+      return this.connectPromise;
+    }
+
+    if (this.socket.destroyed) {
+      this.resetSocket();
+    }
+
+    this.connectPromise = new Promise<void>((resolve, reject) => {
+      const onConnect = () => {
+        cleanup();
+        this.isConnected = true;
+        resolve();
+      };
+
+      const onError = (error: Error) => {
+        cleanup();
+        this.isConnected = false;
+        this.connectPromise = null;
+        reject(
+          new Error(`Failed to connect to Revit client: ${error.message}`)
+        );
+      };
+
+      const onTimeout = () => {
+        cleanup();
+        this.isConnected = false;
+        this.connectPromise = null;
+        this.socket.destroy();
+        reject(new Error("连接到Revit客户端失败"));
+      };
+
+      const cleanup = () => {
+        clearTimeout(timeoutId);
+        this.socket.removeListener("connect", onConnect);
+        this.socket.removeListener("error", onError);
+      };
+
+      this.socket.once("connect", onConnect);
+      this.socket.once("error", onError);
+
+      try {
+        this.socket.connect(this.port, this.host);
+      } catch (error) {
+        cleanup();
+        this.connectPromise = null;
+        reject(error);
+        return;
+      }
+
+      const timeoutId = setTimeout(onTimeout, CONNECT_TIMEOUT_MS);
+    });
+
+    return this.connectPromise;
+  }
+
+  public async ensureConnected(): Promise<void> {
+    if (this.intentionallyClosed) {
+      throw new Error("Revit connection was closed");
+    }
+
+    if (this.isConnected && !this.socket.destroyed) {
+      return;
+    }
+
+    if (this.socket.destroyed) {
+      this.resetSocket();
+    }
+
+    await this.connect();
+  }
+
+  public disconnect(): void {
+    this.intentionallyClosed = true;
+    this.connectPromise = null;
+    this.isConnected = false;
+    this.buffer = "";
+
+    for (const [requestId, callback] of this.responseCallbacks) {
+      callback(
+        JSON.stringify({
+          jsonrpc: "2.0",
+          id: requestId,
+          error: {
+            code: -32000,
+            message: "Connection to Revit closed",
+          },
+        })
+      );
+    }
+    this.responseCallbacks.clear();
+
+    if (!this.socket.destroyed) {
+      this.socket.end();
+      this.socket.destroy();
+    }
   }
 
   private processBuffer(): void {
     try {
-      // 尝试解析JSON
-      const response = JSON.parse(this.buffer);
-      // 如果成功解析，处理响应并清空缓冲区
+      JSON.parse(this.buffer);
       this.handleResponse(this.buffer);
       this.buffer = "";
-    } catch (e) {
-      // 如果解析失败，可能是因为数据不完整，继续等待更多数据
+    } catch {
+      // Incomplete JSON — wait for more data
     }
-  }
-
-  public connect(): boolean {
-    if (this.isConnected) {
-      return true;
-    }
-
-    try {
-      this.socket.connect(this.port, this.host);
-      return true;
-    } catch (error) {
-      console.error("Failed to connect:", error);
-      return false;
-    }
-  }
-
-  public disconnect(): void {
-    this.socket.end();
-    this.isConnected = false;
   }
 
   private generateRequestId(): string {
@@ -77,7 +209,6 @@ export class RevitClientConnection {
   private handleResponse(responseData: string): void {
     try {
       const response = JSON.parse(responseData);
-      // 从响应中获取ID
       const requestId = response.id || "default";
 
       const callback = this.responseCallbacks.get(requestId);
@@ -90,17 +221,13 @@ export class RevitClientConnection {
     }
   }
 
-  public sendCommand(command: string, params: any = {}): Promise<any> {
+  public async sendCommand(command: string, params: any = {}): Promise<any> {
+    await this.ensureConnected();
+
     return new Promise((resolve, reject) => {
       try {
-        if (!this.isConnected) {
-          this.connect();
-        }
-
-        // 生成请求ID
         const requestId = this.generateRequestId();
 
-        // 创建符合JSON-RPC标准的请求对象
         const commandObj = {
           jsonrpc: "2.0",
           method: command,
@@ -108,7 +235,6 @@ export class RevitClientConnection {
           id: requestId,
         };
 
-        // 存储回调函数
         this.responseCallbacks.set(requestId, (responseData) => {
           try {
             const response = JSON.parse(responseData);
@@ -128,17 +254,15 @@ export class RevitClientConnection {
           }
         });
 
-        // 发送命令
         const commandString = JSON.stringify(commandObj);
         this.socket.write(commandString);
 
-        // 设置超时
         setTimeout(() => {
           if (this.responseCallbacks.has(requestId)) {
             this.responseCallbacks.delete(requestId);
             reject(new Error(`Command timed out after 2 minutes: ${command}`));
           }
-        }, 120000); // 2分钟超时
+        }, COMMAND_TIMEOUT_MS);
       } catch (error) {
         reject(error);
       }
