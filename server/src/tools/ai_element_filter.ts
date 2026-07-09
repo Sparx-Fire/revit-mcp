@@ -62,10 +62,22 @@ export function registerAIElementFilterTool(server: McpServer) {
           })
           .optional()
           .describe("The maximum point coordinates (in mm) for spatial bounding box filtering. When set along with boundingBoxMin, only elements that intersect with this bounding box will be returned. Set to null to disable this filter."),
-          maxElements: z
+        limit: z
+          .number()
+          .int()
+          .positive()
+          .optional()
+          .describe("Maximum number of elements to return per page. Default is 500. Use with offset for paginated loading of large models."),
+        offset: z
+          .number()
+          .int()
+          .min(0)
+          .optional()
+          .describe("Number of matching elements to skip before returning results. Default is 0. Use for paginated loading: offset=0 for first page, offset=500 for second page when limit=500."),
+        maxElements: z
           .number()
           .optional()
-          .describe("The maximum number of elements to find in a single tool invocation. Default is 50. Values exceeding 50 are not recommended for performance reasons."),
+          .describe("Deprecated: use limit instead. If limit is omitted, maxElements is used as the page size."),
       })
         .describe("Configuration parameters for the Revit element filter tool. These settings determine which elements will be selected from the Revit project based on various filtering criteria. Multiple filters can be combined to achieve precise element selection. All spatial coordinates should be provided in millimeters."),
     },

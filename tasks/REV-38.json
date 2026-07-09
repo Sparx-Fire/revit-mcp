@@ -1,0 +1,27 @@
+{
+  "identifier": "REV-38",
+  "title": "Ведомость отделки — воспроизведение цепочки спецификаций шаблона",
+  "type": "feature",
+  "phase": "block-3-finish",
+  "priority": "P1",
+  "confidence": "yellow",
+  "estimateDays": 6,
+  "customerProblems": [7],
+  "labels": ["commandset", "server", "schedules", "finishes"],
+  "dependencies": ["REV-26", "REV-23"],
+  "mcpTools": ["create_finish_schedule"],
+  "files": [
+    "commandset/Services/Views/CreateFinishScheduleEventHandler.cs",
+    "commandset/Commands/Views/CreateFinishScheduleCommand.cs",
+    "server/src/tools/create_finish_schedule.ts",
+    "command.json"
+  ],
+  "description": "Закрывает частичный пункт №5. Сейчас ведомость отделки создаётся одиночным templateId, но в шаблоне ADSK_RU это ЦЕПОЧКА: В_Отделка-помещения-01_Стили_Ключевая → В_Отделка-помещения-02_Заполнение данных → О_АР_Ведомость отделки помещений_Имя/_Номер. Доработать create_finish_schedule, чтобы воспроизводить всю цепочку (ключевая + заполнение + выводная), а не одну таблицу. Валидировать на реальном файле («Короткий блок»).",
+  "acceptanceCriteria": [
+    "Воспроизводится цепочка: ключевая (стили) → заполнение данных → выводная ведомость",
+    "Строки = помещения, колонки = типы отделки; оформление из шаблона",
+    "Warning если >30% помещений без finish-данных",
+    "Время выполнения < 60 сек; не используется send_code_to_revit",
+    "Проверено на файле заказчика"
+  ]
+}

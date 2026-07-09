@@ -1,0 +1,29 @@
+{
+  "identifier": "REV-18",
+  "title": "Тест: спецификации дверей/окон/полов + сверка с моделью",
+  "type": "test",
+  "phase": "phase-0-validation",
+  "priority": "P0",
+  "confidence": "green",
+  "estimateDays": 2,
+  "customerProblems": [6],
+  "labels": ["test", "schedules", "validation"],
+  "dependencies": [],
+  "mcpTools": ["create_door_schedule", "create_window_schedule", "create_floor_schedule", "validate_schedule"],
+  "files": [
+    "server/src/tools/create_door_schedule.ts",
+    "server/src/tools/create_window_schedule.ts",
+    "server/src/tools/create_floor_schedule.ts",
+    "server/src/tools/validate_schedule.ts",
+    "commandset/Services/DataExtraction/ValidateScheduleEventHandler.cs",
+    "commandset/Commands/DataExtraction/CreateScheduleDataCommands.cs"
+  ],
+  "description": "Проверить на реальном файле заказчика (или на открытом шаблоне ADSK_RU), что спецификации дверей/окон/полов создаются корректно и что validate_schedule даёт верную сверку с моделью. Пункт №4 помечен как решённый, но подтверждён только на внутренних тестах — нужна валидация на реальной геометрии и в версии Revit заказчика (2022/2023).",
+  "acceptanceCriteria": [
+    "create_door_schedule / create_window_schedule / create_floor_schedule создают спецификации с группировкой по типу",
+    "Количество элементов совпадает с ручной спецификацией в Revit (расхождение = 0)",
+    "validate_schedule возвращает modelCount, scheduleCount, diff, missingIds[] для Doors/Windows/Floors",
+    "Опциональный фильтр по уровню работает",
+    "Проверено на файле заказчика (например «Короткий блок») и на версии Revit 2022/2023"
+  ]
+}

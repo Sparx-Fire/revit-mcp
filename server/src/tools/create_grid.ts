@@ -69,6 +69,26 @@ export function registerCreateGridTool(server: McpServer) {
         .number()
         .default(0)
         .describe("Starting position for first Y-axis grid in mm"),
+      gridTypeName: z
+        .string()
+        .optional()
+        .default("")
+        .describe("GridType name from the project for bubble style"),
+      gridTypeId: z
+        .number()
+        .optional()
+        .default(-1)
+        .describe("GridType element ID from the project"),
+      configureDisplayOnAllPlans: z
+        .boolean()
+        .optional()
+        .default(true)
+        .describe("Configure 2D extents and bubbles on all floor plans after creation"),
+      showBubbles: z
+        .boolean()
+        .optional()
+        .default(true)
+        .describe("Show grid bubbles when display is configured"),
     },
     async (args, extra) => {
       const params = {
@@ -87,6 +107,10 @@ export function registerCreateGridTool(server: McpServer) {
         elevation: args.elevation,
         xStartPosition: args.xStartPosition,
         yStartPosition: args.yStartPosition,
+        gridTypeName: args.gridTypeName,
+        gridTypeId: args.gridTypeId,
+        configureDisplayOnAllPlans: args.configureDisplayOnAllPlans,
+        showBubbles: args.showBubbles,
       };
 
       try {

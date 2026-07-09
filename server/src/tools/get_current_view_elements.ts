@@ -5,7 +5,7 @@ import { withRevitConnection } from "../utils/ConnectionManager.js";
 export function registerGetCurrentViewElementsTool(server: McpServer) {
   server.tool(
     "get_current_view_elements",
-    "Get elements from the current active view in Revit. You can filter by model categories (like Walls, Floors) or annotation categories (like Dimensions, Text). Use includeHidden to show/hide invisible elements and limit to control the number of returned elements.",
+    "Get elements from the current active view in Revit. You can filter by model categories (like Walls, Floors) or annotation categories (like Dimensions, Text). Use includeHidden to show/hide invisible elements. Results are paginated: by default limit=500 elements per page; use offset for subsequent pages. Response includes totalCount and hasMore for large models.",
     {
       modelCategoryList: z
         .array(z.string())
@@ -25,16 +25,33 @@ export function registerGetCurrentViewElementsTool(server: McpServer) {
         .describe("Whether to include hidden elements in the results"),
       limit: z
         .number()
+        .int()
+        .positive()
         .optional()
-        .describe("Maximum number of elements to return"),
+        .describe("Maximum number of elements to return per page. Default is 500."),
+      offset: z
+        .number()
+        .int()
+        .min(0)
+        .optional()
+        .describe("Number of matching elements to skip before returning results. Default is 0. Use with limit for paginated loading."),
     },
     async (args, extra) => {
-      const params = {
-        modelCategoryList: args.modelCategoryList || [],
-        annotationCategoryList: args.annotationCategoryList || [],
-        includeHidden: args.includeHidden || false,
-        limit: args.limit || 100,
+      const params: Record<string, unknown> = {
+        includeHidden: args.includeHidden ?? false,
       };
+      if (args.modelCategoryList?.length) {
+        params.modelCategoryList = args.modelCategoryList;
+      }
+      if (args.annotationCategoryList?.length) {
+        params.annotationCategoryList = args.annotationCategoryList;
+      }
+      if (args.limit !== undefined) {
+        params.limit = args.limit;
+      }
+      if (args.offset !== undefined) {
+        params.offset = args.offset;
+      }
 
       try {
         const response = await withRevitConnection(async (revitClient) => {

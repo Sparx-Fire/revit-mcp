@@ -139,6 +139,35 @@ If using a release ZIP, the command set is pre-installed inside the plugin. For 
 | `query_stored_data` | Query stored project and room data |
 | `send_code_to_revit` | Send C# code to Revit to execute |
 | `say_hello` | Display a greeting dialog in Revit (connection test) |
+| `batch_execute` | Execute up to 20 Revit commands in one round-trip with partial success |
+
+### batch_execute example
+
+Run several read-only commands in a single MCP call (one TCP round-trip to Revit):
+
+```json
+{
+  "commands": [
+    { "command": "get_current_view_info", "params": {} },
+    { "command": "analyze_model_statistics", "params": { "includeDetailedTypes": false } },
+    { "command": "export_room_data", "params": {} }
+  ]
+}
+```
+
+Response shape:
+
+```json
+{
+  "results": [
+    { "index": 0, "command": "get_current_view_info", "success": true, "result": { } },
+    { "index": 1, "command": "unknown_command", "success": false, "error": { "code": -32601, "message": "Method not found" } }
+  ],
+  "summary": { "total": 2, "succeeded": 1, "failed": 1 }
+}
+```
+
+If one command fails, the batch continues and returns partial success. Maximum **20** commands per batch.
 
 ## Testing
 

@@ -1,0 +1,27 @@
+{
+  "identifier": "REV-26",
+  "title": "get_schedule_definition — чтение структуры существующей спецификации",
+  "type": "feature",
+  "phase": "block-0-read-write-tools",
+  "priority": "P0",
+  "confidence": "green",
+  "estimateDays": 3,
+  "customerProblems": [3, 5],
+  "labels": ["commandset", "server", "schedules", "read"],
+  "dependencies": [],
+  "mcpTools": ["get_schedule_definition"],
+  "files": [
+    "server/src/tools/get_schedule_definition.ts (new)",
+    "commandset/Services/Views/GetScheduleDefinitionEventHandler.cs (new)",
+    "commandset/Commands/Views/GetScheduleDefinitionCommand.cs (new)",
+    "command.json"
+  ],
+  "description": "Новый read-tool: по id/имени спецификации вернуть её полную структуру — поля (параметр, заголовок, ширина колонки, выравнивание, тип), фильтры, сортировки, группировки, флаги ShowTitle/ShowHeaders/ShowGridLines. Нужен, чтобы ИИ мог точно повторить оформление эталонных спецификаций шаблона (ТЭП, ведомость отделки), а не собирать таблицу «на глаз». Revit API: ViewSchedule.Definition, GetFieldCount, GetFieldId, ScheduleField, GridColumnWidth.",
+  "acceptanceCriteria": [
+    "По id/uniqueId/имени возвращает список полей с заголовками и ширинами (в мм)",
+    "Возвращает фильтры, сортировки, группировки и флаги отображения",
+    "Работает на шаблонных спецификациях ADSK_RU (ADSK_О_С_С шапкой, О_АР_Квартиры_ТЭП в %)",
+    "MCP tool зарегистрирован, интеграционный тест",
+    "Работает на Revit 2022/2023"
+  ]
+}

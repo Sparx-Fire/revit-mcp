@@ -1,0 +1,25 @@
+{
+  "identifier": "REV-22",
+  "title": "Тест: создание листа и размещение вида/спецификации по координатам",
+  "type": "test",
+  "phase": "phase-0-validation",
+  "priority": "P0",
+  "confidence": "green",
+  "estimateDays": 1.5,
+  "customerProblems": [8],
+  "labels": ["test", "sheets", "validation"],
+  "dependencies": [],
+  "mcpTools": ["create_sheet", "place_view_on_sheet"],
+  "files": [
+    "server/src/tools/create_sheet.ts",
+    "server/src/tools/place_view_on_sheet.ts",
+    "commandset/Services/Views/PlaceViewOnSheetEventHandler.cs"
+  ],
+  "description": "Проверить базовый сценарий: создание листа с основной надписью из проекта и размещение вида и спецификации по координатам (мм). Умная авто-расстановка НЕ входит в этот тикет (см. REV-39). Штампы шаблона ADSK_RU: ADSK_ОсновнаяНадпись (Форма 3/5/6), ADSK_Титул (А3А/А4К).",
+  "acceptanceCriteria": [
+    "create_sheet создаёт лист с title block из проекта (по id или имени)",
+    "place_view_on_sheet размещает вид (Viewport) и спецификацию (ScheduleSheetInstance) по координатам в мм",
+    "Сценарий «лист → план → спецификация дверей» проходит целиком",
+    "Проверено на Revit 2022/2023"
+  ]
+}

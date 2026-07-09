@@ -2,6 +2,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { registerTools } from "./tools/register.js";
+import { closeRevitConnection } from "./utils/ConnectionManager.js";
 
 // 创建服务器实例
 const server = new McpServer({
@@ -23,4 +24,14 @@ async function main() {
 main().catch((error) => {
   console.error("Error starting Revit MCP Server:", error);
   process.exit(1);
+});
+
+process.on("SIGINT", () => {
+  closeRevitConnection();
+  process.exit(0);
+});
+
+process.on("SIGTERM", () => {
+  closeRevitConnection();
+  process.exit(0);
 });

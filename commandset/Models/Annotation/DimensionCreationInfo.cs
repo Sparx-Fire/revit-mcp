@@ -61,6 +61,19 @@ public class DimensionCreationInfo
     public JZPoint LinePoint { get; set; }
 
     /// <summary>
+    ///     Offset of the dimension line from the measured segment when linePoint is omitted (mm).
+    ///     Defaults to 304.8 mm (former 1 foot offset).
+    /// </summary>
+    [JsonProperty("offsetMm")]
+    public double OffsetMm { get; set; }
+
+    /// <summary>
+    ///     Pick tolerance for auto-detected references at points (mm).
+    /// </summary>
+    [JsonProperty("pickToleranceMm")]
+    public double PickToleranceMm { get; set; }
+
+    /// <summary>
     ///     Elements to dimension
     /// </summary>
     [JsonProperty("elementIds")]

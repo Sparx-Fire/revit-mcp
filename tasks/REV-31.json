@@ -1,0 +1,28 @@
+{
+  "identifier": "REV-31",
+  "title": "Съёмники модели для нормоконтроля (геометрия помещений / двери / расстояния)",
+  "type": "feature",
+  "phase": "block-1-normatives",
+  "priority": "P0",
+  "confidence": "yellow",
+  "estimateDays": 5,
+  "customerProblems": [2],
+  "labels": ["commandset", "server", "normatives", "geometry"],
+  "dependencies": ["REV-28"],
+  "mcpTools": ["get_room_geometry_metrics", "get_door_egress_info"],
+  "files": [
+    "server/src/tools/get_room_geometry_metrics.ts (new)",
+    "server/src/tools/get_door_egress_info.ts (new)",
+    "commandset/Services/DataExtraction/RoomGeometryMetricsEventHandler.cs (new)",
+    "commandset/Services/DataExtraction/DoorEgressInfoEventHandler.cs (new)",
+    "command.json"
+  ],
+  "description": "Команды, отдающие геометрические метрики для сопоставления с нормами: по помещениям — глубина, ширина, площадь, ширина проходов/коридоров; по дверям — расположение, ширина проёма, признак пути эвакуации, тип; расстояния (простенки, лоджии/балконы). Основа для команд check_* (REV-32..35). Revit API: Room.GetBoundarySegments, SpatialElementGeometryCalculator, FamilyInstance, BoundingBox.",
+  "acceptanceCriteria": [
+    "get_room_geometry_metrics: глубина/ширина/площадь и ширина коридоров в мм/м²",
+    "get_door_egress_info: ширина проёма, тип, host-стена, признак эвакуационного пути",
+    "Метрики совпадают с ручными замерами в Revit (в пределах допуска)",
+    "Работает на файле заказчика, время < 30 сек на этаж",
+    "Revit 2022/2023"
+  ]
+}

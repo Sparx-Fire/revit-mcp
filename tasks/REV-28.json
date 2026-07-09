@@ -1,0 +1,28 @@
+{
+  "identifier": "REV-28",
+  "title": "get_element_parameters / set_element_parameter — чтение и запись параметров",
+  "type": "feature",
+  "phase": "block-0-read-write-tools",
+  "priority": "P0",
+  "confidence": "green",
+  "estimateDays": 3,
+  "customerProblems": [2],
+  "labels": ["commandset", "server", "parameters", "read", "write"],
+  "dependencies": [],
+  "mcpTools": ["get_element_parameters", "set_element_parameter"],
+  "files": [
+    "server/src/tools/get_element_parameters.ts (new)",
+    "server/src/tools/set_element_parameter.ts (new)",
+    "commandset/Services/GetElementParametersEventHandler.cs (new)",
+    "commandset/Services/SetElementParameterEventHandler.cs (new)",
+    "command.json"
+  ],
+  "description": "Две команды: чтение всех параметров элемента по id (имя, значение, единицы, только-чтение) и запись значения параметра по id. Основа для нормоконтроля (проставить маркировку/признак противопожарности), для маркировок и любой параметрической правки без send_code_to_revit. Revit API: Element.Parameters, Parameter.AsValueString, Parameter.Set в транзакции.",
+  "acceptanceCriteria": [
+    "get_element_parameters возвращает список параметров с типами/единицами/значениями",
+    "set_element_parameter пишет значение (число/строка/да-нет/id) в транзакции",
+    "Понятная ошибка для read-only параметров и несовпадения типов",
+    "Не используется send_code_to_revit",
+    "MCP tools зарегистрированы, интеграционный тест, Revit 2022/2023"
+  ]
+}

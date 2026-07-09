@@ -1,0 +1,42 @@
+{
+  "identifier": "REV-25",
+  "title": "Тест: чтение модели и операции над элементами",
+  "type": "test",
+  "phase": "phase-0-validation",
+  "priority": "P0",
+  "confidence": "green",
+  "estimateDays": 1.5,
+  "customerProblems": [13],
+  "labels": ["test", "read", "operations", "validation"],
+  "dependencies": [],
+  "mcpTools": [
+    "say_hello",
+    "get_current_view_info",
+    "get_current_view_elements",
+    "ai_element_filter",
+    "analyze_model_statistics",
+    "get_available_family_types",
+    "get_selected_elements",
+    "operate_element",
+    "delete_element",
+    "color_elements"
+  ],
+  "files": [
+    "server/src/tools/get_current_view_info.ts",
+    "server/src/tools/get_current_view_elements.ts",
+    "server/src/tools/ai_element_filter.ts",
+    "server/src/tools/analyze_model_statistics.ts",
+    "server/src/tools/get_available_family_types.ts",
+    "server/src/tools/get_selected_elements.ts",
+    "server/src/tools/operate_element.ts",
+    "server/src/tools/delete_element.ts",
+    "server/src/tools/color_elements.ts"
+  ],
+  "description": "Регрессионный прогон read-инструментов и операций над элементами на реальном файле: контекст вида, элементы вида, фильтрация, статистика модели, типы семейств, выделение, операции (select/hide/setColor), удаление, окраска по параметру. Базовый чек-лист «ИИ силён в анализе» — подтвердить стабильность.",
+  "acceptanceCriteria": [
+    "Read-инструменты возвращают корректные данные на файле заказчика",
+    "operate_element (select/hide/setColor) работает",
+    "delete_element и color_elements работают без ошибок",
+    "Составлен воспроизводимый чек-лист регрессии для версии заказчика (2022/2023)"
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "identifier": "REV-33",
+  "title": "check_evacuation_width — ширина эвакуационного коридора по норме",
+  "type": "feature",
+  "phase": "block-1-normatives",
+  "priority": "P1",
+  "confidence": "yellow",
+  "estimateDays": 3,
+  "customerProblems": [2],
+  "labels": ["commandset", "server", "normatives", "fire-safety"],
+  "dependencies": ["REV-29", "REV-31"],
+  "mcpTools": ["check_evacuation_width"],
+  "files": [
+    "server/src/tools/check_evacuation_width.ts (new)",
+    "commandset/Services/Normatives/CheckEvacuationWidthEventHandler.cs (new)",
+    "command.json"
+  ],
+  "description": "Живой запрос заказчика: «укажи необходимую ширину эвакуационного коридора согласно нормативу». Сопоставить требуемую по норме ширину с фактической шириной коридоров модели (из REV-31), вывести нарушения. Режимы: отчёт в чат и/или подсветка нарушений в модели.",
+  "acceptanceCriteria": [
+    "Возвращает требуемую ширину (с цитатой пункта) и фактическую по помещениям/коридорам",
+    "Список нарушений с id элементов",
+    "Опционально: подсветка нарушений (operate_element setColor)",
+    "Проверено на файле заказчика"
+  ]
+}

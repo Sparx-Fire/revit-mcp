@@ -1,0 +1,27 @@
+{
+  "identifier": "REV-30",
+  "title": "Библиотека проверок — кэш нормативных правил между сессиями",
+  "type": "feature",
+  "phase": "block-1-normatives",
+  "priority": "P1",
+  "confidence": "yellow",
+  "estimateDays": 3,
+  "customerProblems": [2],
+  "labels": ["server", "normatives", "database", "cache"],
+  "dependencies": ["REV-29"],
+  "mcpTools": ["save_norm_rule", "query_norm_rules"],
+  "files": [
+    "server/src/normatives/rulesStore.ts (new)",
+    "server/src/database/db.ts",
+    "server/src/tools/query_norm_rules.ts (new)",
+    "server/src/tools/save_norm_rule.ts (new)"
+  ],
+  "description": "Однократно извлечённое из норматива правило (REV-29) сохраняется в локальную библиотеку (SQLite/JSON рядом с существующим server/src/database) и переиспользуется в следующих сессиях — не нужно перечитывать один и тот же норматив каждый раз. query_norm_rules(тема) возвращает применимые правила с цитатой источника.",
+  "acceptanceCriteria": [
+    "save_norm_rule сохраняет правило с источником и версией документа",
+    "query_norm_rules(тема) возвращает применимые правила между сессиями",
+    "Дедупликация по источнику+пункту; возможность обновить правило",
+    "Хранилище не зависит от папки /normatives (она — только образцы)",
+    "MCP tools зарегистрированы"
+  ]
+}

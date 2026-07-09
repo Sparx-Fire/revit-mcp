@@ -16,7 +16,7 @@ export function registerCreatePointBasedElementTool(server: McpServer) {
             typeId: z
               .number()
               .optional()
-              .describe("The ID of the family type to create."),
+              .describe("Family type ID from get_available_family_types. Strongly recommended for doors/windows."),
             locationPoint: z
               .object({
                 x: z.number().describe("X coordinate"),

@@ -331,33 +331,25 @@ namespace RevitMCPCommandSet.Services
             Color color = new Color((byte)r, (byte)g, (byte)b);
             // 创建图形覆盖设置
             OverrideGraphicSettings overrideSettings = new OverrideGraphicSettings();
-            // 设置指定颜色
+            // 设置指定颜色（与 Revit「Графика элемента на виде»一致：линии + заливка）
             overrideSettings.SetProjectionLineColor(color);
             overrideSettings.SetCutLineColor(color);
             overrideSettings.SetSurfaceForegroundPatternColor(color);
             overrideSettings.SetSurfaceBackgroundPatternColor(color);
+            overrideSettings.SetCutForegroundPatternColor(color);
+            overrideSettings.SetCutBackgroundPatternColor(color);
 
-            // 尝试设置填充图案
-            try
+            // 实心填充：表面 + 截面（平面图上的墙主要靠截面图案显示）
+            FillPatternElement solidPattern = new FilteredElementCollector(doc)
+                .OfClass(typeof(FillPatternElement))
+                .Cast<FillPatternElement>()
+                .FirstOrDefault(p => p.GetFillPattern().IsSolidFill);
+
+            if (solidPattern != null)
             {
-                // 尝试获取默认的填充图案
-                FilteredElementCollector patternCollector = new FilteredElementCollector(doc)
-                    .OfClass(typeof(FillPatternElement));
-
-                // 首先尝试找到实心填充图案
-                FillPatternElement solidPattern = patternCollector
-                    .Cast<FillPatternElement>()
-                    .FirstOrDefault(p => p.GetFillPattern().IsSolidFill);
-
-                if (solidPattern != null)
-                {
-                    overrideSettings.SetSurfaceForegroundPatternId(solidPattern.Id);
-                    overrideSettings.SetSurfaceForegroundPatternVisible(true);
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"设置填充图案失败: {ex.Message}");
+                overrideSettings.SetSurfaceForegroundPatternId(solidPattern.Id);
+                overrideSettings.SetSurfaceForegroundPatternVisible(true);
+                overrideSettings.SetCutForegroundPatternId(solidPattern.Id);
             }
 
             // 对每个元素应用覆盖设置

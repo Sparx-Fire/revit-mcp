@@ -24,10 +24,11 @@ namespace RevitMCPCommandSet.Commands.Access
                 List<string> modelCategoryList = parameters?["modelCategoryList"]?.ToObject<List<string>>() ?? new List<string>();
                 List<string> annotationCategoryList = parameters?["annotationCategoryList"]?.ToObject<List<string>>() ?? new List<string>();
                 bool includeHidden = parameters?["includeHidden"]?.Value<bool>() ?? false;
-                int limit = parameters?["limit"]?.Value<int>() ?? 100;
+                int limit = parameters?["limit"]?.Value<int>() ?? 0;
+                int offset = parameters?["offset"]?.Value<int>() ?? 0;
 
                 // 设置查询参数
-                _handler.SetQueryParameters(modelCategoryList, annotationCategoryList, includeHidden, limit);
+                _handler.SetQueryParameters(modelCategoryList, annotationCategoryList, includeHidden, limit, offset);
 
                 // 触发外部事件并等待完成
                 if (RaiseAndWaitForCompletion(60000)) // 60秒超时

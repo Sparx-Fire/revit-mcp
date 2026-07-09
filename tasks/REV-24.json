@@ -1,0 +1,40 @@
+{
+  "identifier": "REV-24",
+  "title": "Тест: базовое создание элементов + маркировка",
+  "type": "test",
+  "phase": "phase-0-validation",
+  "priority": "P0",
+  "confidence": "green",
+  "estimateDays": 2,
+  "customerProblems": [12],
+  "labels": ["test", "modeling", "annotations", "validation"],
+  "dependencies": [],
+  "mcpTools": [
+    "create_line_based_element",
+    "create_surface_based_element",
+    "create_point_based_element",
+    "create_level",
+    "create_room",
+    "create_structural_framing_system",
+    "tag_all_walls",
+    "tag_all_rooms"
+  ],
+  "files": [
+    "server/src/tools/create_line_based_element.ts",
+    "server/src/tools/create_surface_based_element.ts",
+    "server/src/tools/create_point_based_element.ts",
+    "server/src/tools/create_level.ts",
+    "server/src/tools/create_room.ts",
+    "server/src/tools/create_structural_framing_system.ts",
+    "server/src/tools/tag_all_walls.ts",
+    "server/src/tools/tag_all_rooms.ts"
+  ],
+  "description": "Проверить полный цикл базового моделирования по правилам проекта: стены (line-based), полы/потолки/крыши (surface-based), двери/окна (point-based с hostWallId), уровни, помещения, балочные системы, а также маркировку стен и помещений. Единицы — мм, площади м². Порядок как в правиле «Создание здания».",
+  "acceptanceCriteria": [
+    "Стены/полы/двери/окна/уровни/помещения создаются с корректными типами из get_available_family_types",
+    "Единицы соблюдаются (координаты/размеры мм, площади м²)",
+    "Двери и окна корректно привязываются к hostWallId",
+    "tag_all_walls / tag_all_rooms проставляют марки в текущем виде",
+    "Проверено на Revit 2022/2023"
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "identifier": "REV-23",
+  "title": "Тест: экспорт данных (ТЭП / помещения / отделка / материалы)",
+  "type": "test",
+  "phase": "phase-0-validation",
+  "priority": "P0",
+  "confidence": "green",
+  "estimateDays": 2,
+  "customerProblems": [5],
+  "labels": ["test", "data-extraction", "validation"],
+  "dependencies": [],
+  "mcpTools": ["export_tep_data", "export_room_data", "export_room_finish_data", "get_material_quantities"],
+  "files": [
+    "server/src/tools/export_tep_data.ts",
+    "server/src/tools/export_room_data.ts",
+    "server/src/tools/export_room_finish_data.ts",
+    "server/src/tools/get_material_quantities.ts"
+  ],
+  "description": "Проверить корректность данных экспорта на реальном файле: ТЭП (площадь застройки, общая площадь, этажность, площади по уровням, объём, помещения по назначению), данные помещений, данные отделки (пол/стены/потолок + материалы), объёмы материалов. Только данные — без оформления таблиц.",
+  "acceptanceCriteria": [
+    "export_tep_data: корректные поля ТЭП, единицы мм/м²/м³ (конвертация из внутренних единиц Revit)",
+    "export_room_data: id, имя, номер, уровень, площадь/объём/периметр совпадают с моделью",
+    "export_room_finish_data: floorFinish/wallFinish/ceilingFinish; null + warning если не заполнено",
+    "get_material_quantities: площади/объёмы по материалам совпадают с ведомостью материалов Revit",
+    "Проверено на файле заказчика"
+  ]
+}

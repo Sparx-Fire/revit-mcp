@@ -66,7 +66,16 @@ namespace revit_mcp_plugin.Utils
         {
             try
             {
-                var defaultRegistry = new { commands = new object[] { } };
+                var defaultRegistry = new
+                {
+                    commands = new object[] { },
+                    settings = new
+                    {
+                        logLevel = "Info",
+                        port = 8080,
+                        autoStartOnLaunch = true
+                    }
+                };
                 string jsonContent = JsonConvert.SerializeObject(defaultRegistry, Formatting.Indented);
 
                 File.WriteAllText(filePath, jsonContent);

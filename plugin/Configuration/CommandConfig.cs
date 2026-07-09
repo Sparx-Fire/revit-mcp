@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using System;
+using Newtonsoft.Json;
 using RevitMCPSDK.API.Interfaces;
 
 namespace revit_mcp_plugin.Configuration
@@ -50,5 +51,13 @@ namespace revit_mcp_plugin.Configuration
         /// </summary>
         [JsonProperty("description")]
         public string Description { get; set; } = "";
+
+        /// <summary>
+        /// Plugin built-in command (no commandset DLL). Always available when the plugin is loaded.
+        /// </summary>
+        [JsonIgnore]
+        public bool IsBuiltIn =>
+            !string.IsNullOrEmpty(AssemblyPath) &&
+            AssemblyPath.StartsWith("plugin:", StringComparison.OrdinalIgnoreCase);
     }
 }

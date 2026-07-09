@@ -87,30 +87,14 @@ namespace RevitMCPCommandSet.Services
                 {
                     trans.Start();
 
-                    // 1. Resolve Level - Find nearest existing level to the target elevation (like walls do)
-                    Level level = doc.FindNearestLevel(Parameters.Elevation / 304.8);
-                    if (level == null)
-                    {
-                        // Fallback: try to find any level
-                        level = new FilteredElementCollector(doc)
-                            .OfClass(typeof(Level))
-                            .Cast<Level>()
-                            .FirstOrDefault();
-                    }
-                    if (level == null)
-                    {
-                        throw new Exception("No levels found in project. Please create at least one level before creating beam systems.");
-                    }
+                    // 1. Resolve level by requested name (with fallbacks in ResolveLevel)
+                    Level level = ResolveLevel(doc, Parameters.LevelName, warnings);
 
-                    // Add info about which level was selected
-                    double levelElevationMm = level.Elevation * 304.8;
-                    warnings.Add($"Using level '{level.Name}' at elevation {levelElevationMm:F0}mm (nearest to target elevation {Parameters.Elevation:F0}mm)");
-
-                    // 2. Build rectangular profile (4 curves in closed loop)
+                    // 2. Build rectangular profile on the resolved level plane
                     List<Curve> profileCurves = BuildRectangularProfile(
                         Parameters.XMin, Parameters.XMax,
                         Parameters.YMin, Parameters.YMax,
-                        Parameters.Elevation
+                        level.Elevation
                     );
 
                     // 3. Map direction edge to curve index
@@ -141,9 +125,8 @@ namespace RevitMCPCommandSet.Services
                     // 7b. Force regeneration so BeamSystem creates its member beams
                     doc.Regenerate();
 
-                    // 8. Apply elevation offset to all beams using Z_OFFSET_VALUE parameter
-                    // Note: BeamSystem.Create() places beams at level elevation. We use Z_OFFSET_VALUE to offset them.
-                    double elevationOffsetFt = (Parameters.Elevation / 304.8) - level.Elevation;
+                    // 8. Apply elevation offset from level using Z_OFFSET_VALUE parameter
+                    double elevationOffsetFt = Parameters.Elevation / 304.8;
 
                     if (Math.Abs(elevationOffsetFt) > 0.001) // Only apply if there's a meaningful offset
                     {
@@ -166,7 +149,7 @@ namespace RevitMCPCommandSet.Services
 
                         if (elevationSetCount > 0)
                         {
-                            warnings.Add($"Applied elevation offset of {Parameters.Elevation:F0}mm to {elevationSetCount} beams");
+                            warnings.Add($"Applied elevation offset of {Parameters.Elevation:F0}mm from level '{level.Name}' to {elevationSetCount} beams");
                         }
                         else if (beamIdsForElevation.Count > 0)
                         {
@@ -394,14 +377,14 @@ namespace RevitMCPCommandSet.Services
         /// <summary>
         /// Build rectangular profile from boundary coordinates
         /// </summary>
-        private List<Curve> BuildRectangularProfile(double xMin, double xMax, double yMin, double yMax, double elevation)
+        private List<Curve> BuildRectangularProfile(double xMin, double xMax, double yMin, double yMax, double elevationFeet)
         {
-            // Convert mm to feet
+            // Convert boundary mm to feet; elevation is already in Revit internal feet
             double xMinFt = xMin / 304.8;
             double xMaxFt = xMax / 304.8;
             double yMinFt = yMin / 304.8;
             double yMaxFt = yMax / 304.8;
-            double elevFt = elevation / 304.8;
+            double elevFt = elevationFeet;
 
             List<Curve> curves = new List<Curve>();
 

@@ -1,0 +1,25 @@
+{
+  "identifier": "REV-34",
+  "title": "check_room_depth — проверка глубины помещений по норме",
+  "type": "feature",
+  "phase": "block-1-normatives",
+  "priority": "P1",
+  "confidence": "yellow",
+  "estimateDays": 2,
+  "customerProblems": [2],
+  "labels": ["commandset", "server", "normatives"],
+  "dependencies": ["REV-29", "REV-31"],
+  "mcpTools": ["check_room_depth"],
+  "files": [
+    "server/src/tools/check_room_depth.ts (new)",
+    "commandset/Services/Normatives/CheckRoomDepthEventHandler.cs (new)",
+    "command.json"
+  ],
+  "description": "Живой запрос заказчика: «какой глубины должны быть комнаты». Сопоставить нормативные ограничения глубины помещений с фактическими метриками (REV-31), вывести несоответствия.",
+  "acceptanceCriteria": [
+    "Возвращает норматив глубины (с цитатой) и фактическую глубину по помещениям",
+    "Список помещений-нарушителей с id",
+    "Режимы отчёта и подсветки",
+    "Проверено на файле заказчика"
+  ]
+}

@@ -1,6 +1,14 @@
 import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { withRevitConnection } from "../utils/ConnectionManager.js";
+import { modelStatisticsCache } from "../utils/ModelCache.js";
+
+function asStatisticsResult(
+  data: Record<string, unknown>,
+  cached: boolean
+): Record<string, unknown> {
+  return { ...data, cached };
+}
 
 export function registerAnalyzeModelStatisticsTool(server: McpServer) {
   server.tool(
@@ -14,20 +22,57 @@ export function registerAnalyzeModelStatisticsTool(server: McpServer) {
         .describe("Whether to include detailed breakdown by family and type within each category. Defaults to true."),
     },
     async (args, extra) => {
-      const params = {
-        includeDetailedTypes: args.includeDetailedTypes ?? true,
-      };
+      const includeDetailedTypes = args.includeDetailedTypes ?? true;
+      const params = { includeDetailedTypes };
 
       try {
+        const lastKnownProject = modelStatisticsCache.getLastKnownProjectName();
+        if (lastKnownProject) {
+          const cached = modelStatisticsCache.get(
+            lastKnownProject,
+            includeDetailedTypes
+          );
+          if (cached) {
+            return {
+              content: [
+                {
+                  type: "text",
+                  text: JSON.stringify(asStatisticsResult(cached, true), null, 2),
+                },
+              ],
+            };
+          }
+        }
+
         const response = await withRevitConnection(async (revitClient) => {
           return await revitClient.sendCommand("analyze_model_statistics", params);
         });
+
+        const result: Record<string, unknown> =
+          response && typeof response === "object"
+            ? (response as Record<string, unknown>)
+            : { data: response };
+
+        const projectName =
+          typeof result.projectName === "string" ? result.projectName : null;
+
+        if (
+          projectName &&
+          lastKnownProject &&
+          projectName !== lastKnownProject
+        ) {
+          modelStatisticsCache.invalidate(lastKnownProject);
+        }
+
+        if (projectName) {
+          modelStatisticsCache.set(projectName, includeDetailedTypes, result);
+        }
 
         return {
           content: [
             {
               type: "text",
-              text: JSON.stringify(response, null, 2),
+              text: JSON.stringify(asStatisticsResult(result, false), null, 2),
             },
           ],
         };

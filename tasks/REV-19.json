@@ -1,0 +1,26 @@
+{
+  "identifier": "REV-19",
+  "title": "Тест: координационные оси (create_grid / configure_grid_display)",
+  "type": "test",
+  "phase": "phase-0-validation",
+  "priority": "P0",
+  "confidence": "green",
+  "estimateDays": 1.5,
+  "customerProblems": [9],
+  "labels": ["test", "grids", "annotations", "validation"],
+  "dependencies": [],
+  "mcpTools": ["create_grid", "configure_grid_display"],
+  "files": [
+    "server/src/tools/create_grid.ts",
+    "server/src/tools/configure_grid_display.ts",
+    "commandset/Services/CreateGridEventHandler.cs",
+    "commandset/Services/GridDisplayHelper.cs"
+  ],
+  "description": "Проверить на реальном файле, что оси видны на всех планах этажей, стиль пузырей берётся из GridType проекта, и что configure_grid_display исправляет уже существующие оси без пересоздания. Пункт №7 помечен как решённый, но не подтверждён на файле заказчика.",
+  "acceptanceCriteria": [
+    "Новые оси видны на всех планах этажей (2D-экстенты по всем уровням)",
+    "Пузыри соответствуют GridType проекта (не дефолтному)",
+    "configure_grid_display исправляет существующие оси без пересоздания",
+    "Проверено на файле заказчика и на Revit 2022/2023"
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "identifier": "REV-32",
+  "title": "check_fire_doors — проверка/маркировка противопожарных дверей (пилот)",
+  "type": "feature",
+  "phase": "block-1-normatives",
+  "priority": "P0",
+  "confidence": "yellow",
+  "estimateDays": 3,
+  "customerProblems": [2],
+  "labels": ["commandset", "server", "normatives", "fire-safety"],
+  "dependencies": ["REV-29", "REV-31", "REV-28"],
+  "mcpTools": ["check_fire_doors"],
+  "files": [
+    "server/src/tools/check_fire_doors.ts (new)",
+    "commandset/Services/Normatives/CheckFireDoorsEventHandler.cs (new)",
+    "command.json"
+  ],
+  "description": "Пилотный сценарий нормоконтроля (рекомендован первым — самый чёткий числовой критерий и простая запись параметра). По правилу из норматива определить, какие двери должны быть противопожарными (на путях эвакуации / между отсеками), сверить с моделью. Живой запрос заказчика: «покажи какие двери необходимо выполнить противопожарными». Режимы: только отчёт в чат ИЛИ запись признака/маркировки в модель.",
+  "acceptanceCriteria": [
+    "Возвращает список дверей, которые должны быть противопожарными, с цитатой пункта норматива",
+    "Режим отчёта: ответ в чат без изменения модели",
+    "Режим записи: проставляет параметр/маркировку через set_element_parameter (REV-28)",
+    "Пилот проверен на «Коротком блоке»",
+    "Не используется send_code_to_revit"
+  ]
+}

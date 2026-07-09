@@ -1,0 +1,26 @@
+{
+  "identifier": "REV-21",
+  "title": "Тест: создание спецификации по шаблону (create_schedule)",
+  "type": "test",
+  "phase": "phase-0-validation",
+  "priority": "P0",
+  "confidence": "green",
+  "estimateDays": 1.5,
+  "customerProblems": [3],
+  "labels": ["test", "schedules", "validation"],
+  "dependencies": [],
+  "mcpTools": ["create_schedule"],
+  "files": [
+    "server/src/tools/create_schedule.ts",
+    "commandset/Services/Views/CreateScheduleEventHandler.cs",
+    "commandset/Models/Views/ScheduleCreationInfo.cs"
+  ],
+  "description": "Проверить, что create_schedule корректно создаёт спецификацию по templateId из проекта с сохранением оформления шаблона, а также применяет поля/фильтры/сортировки/группировки. Проверить работу с шаблонными спецификациями шаблона ADSK_RU (ADSK_О_С_С шапкой и др.).",
+  "acceptanceCriteria": [
+    "Создаёт спецификацию Doors/Windows/Rooms по templateId с сохранением оформления шаблона",
+    "Поля, фильтры, сортировки и группировки применяются согласно параметрам",
+    "Без templateId создаётся корректная плоская спецификация (fallback)",
+    "Не используется send_code_to_revit",
+    "Проверено на Revit 2022/2023"
+  ]
+}

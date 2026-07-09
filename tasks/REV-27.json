@@ -1,0 +1,27 @@
+{
+  "identifier": "REV-27",
+  "title": "get_document_styles — инвентаризация стилей проекта",
+  "type": "feature",
+  "phase": "block-0-read-write-tools",
+  "priority": "P0",
+  "confidence": "green",
+  "estimateDays": 3,
+  "customerProblems": [3, 10, 9],
+  "labels": ["commandset", "server", "styles", "read"],
+  "dependencies": [],
+  "mcpTools": ["get_document_styles"],
+  "files": [
+    "server/src/tools/get_document_styles.ts (new)",
+    "commandset/Services/GetDocumentStylesEventHandler.cs (new)",
+    "commandset/Commands/GetDocumentStylesCommand.cs (new)",
+    "command.json"
+  ],
+  "description": "Новый read-tool: вернуть перечень оформительских стилей проекта с параметрами — DimensionType, GridType, TextNoteType (с высотой текста в мм), типы линий (LinePatternElement / GraphicsStyle), типы основных надписей. Даёт ИИ возможность подбирать стиль «как в шаблоне» по имени/id для размеров, осей, текста и таблиц. Revit API: FilteredElementCollector по каждому классу типов.",
+  "acceptanceCriteria": [
+    "Возвращает DimensionType, GridType, TextNoteType (высота текста в мм), типы линий, штампы",
+    "У каждого стиля есть id, имя и ключевые параметры",
+    "Работает на шаблоне ADSK_RU",
+    "MCP tool зарегистрирован, интеграционный тест",
+    "Работает на Revit 2022/2023"
+  ]
+}

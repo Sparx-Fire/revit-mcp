@@ -32,7 +32,21 @@ export function registerCreateDimensionsTool(server: McpServer) {
               })
               .optional()
               .describe(
-                "Location of the dimension line itself (mm). If not provided, defaults to midpoint offset by 1 foot"
+                "Location of the dimension line itself (mm). If omitted, offsetMm is applied perpendicular to the measured segment."
+              ),
+            offsetMm: z
+              .number()
+              .positive()
+              .optional()
+              .describe(
+                "Offset of the dimension line when linePoint is omitted (mm). Defaults to 304.8 mm."
+              ),
+            pickToleranceMm: z
+              .number()
+              .positive()
+              .optional()
+              .describe(
+                "Search tolerance for auto-detected references at points (mm). Defaults to 1524 mm."
               ),
             elementIds: z
               .array(z.number())
@@ -45,7 +59,7 @@ export function registerCreateDimensionsTool(server: McpServer) {
               .optional()
               .default("Linear")
               .describe(
-                "Dimension type (default: 'Linear')"
+                "DimensionType name from the project. Falls back to dimensionStyleId or default linear type."
               ),
             dimensionStyleId: z
               .number()

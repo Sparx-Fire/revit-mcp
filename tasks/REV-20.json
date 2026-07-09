@@ -1,0 +1,26 @@
+{
+  "identifier": "REV-20",
+  "title": "Тест: размерные линии (create_dimensions / dimension_room_walls)",
+  "type": "test",
+  "phase": "phase-0-validation",
+  "priority": "P0",
+  "confidence": "green",
+  "estimateDays": 1.5,
+  "customerProblems": [10],
+  "labels": ["test", "dimensions", "annotations", "validation"],
+  "dependencies": [],
+  "mcpTools": ["create_dimensions", "dimension_room_walls"],
+  "files": [
+    "server/src/tools/create_dimensions.ts",
+    "server/src/tools/dimension_room_walls.ts",
+    "commandset/Services/AnnotationComponents/CreateDimensionEventHandler.cs",
+    "commandset/Commands/AnnotationComponents/DimensionRoomWallsCommand.cs"
+  ],
+  "description": "Проверить на реальном помещении, что размеры используют DimensionType из проекта, отступы задаются в мм, и dimension_room_walls строит корректную цепочку размеров по стенам помещения на активном плане. Пункт №8 помечен как решённый, но не подтверждён на файле заказчика.",
+  "acceptanceCriteria": [
+    "Размеры используют DimensionType из проекта по имени/id",
+    "Отступы задаются в мм и соблюдаются",
+    "dimension_room_walls(roomId) строит цепочки X и Y по стенам помещения без дублей узлов",
+    "Проверено на одном помещении файла заказчика и на Revit 2022/2023"
+  ]
+}

@@ -43,6 +43,9 @@ namespace RevitMCPCommandSet.Services
         private List<string> _annotationCategoryList;
         private bool _includeHidden;
         private int _limit;
+        private int _offset;
+
+        private const int DefaultLimit = 500;
 
         // 执行结果
         public ViewElementsResult ResultInfo { get; private set; }
@@ -52,12 +55,13 @@ namespace RevitMCPCommandSet.Services
         private readonly ManualResetEvent _resetEvent = new ManualResetEvent(false);
 
         // 设置查询参数
-        public void SetQueryParameters(List<string> modelCategoryList, List<string> annotationCategoryList, bool includeHidden, int limit)
+        public void SetQueryParameters(List<string> modelCategoryList, List<string> annotationCategoryList, bool includeHidden, int limit, int offset)
         {
             _modelCategoryList = modelCategoryList;
             _annotationCategoryList = annotationCategoryList;
             _includeHidden = includeHidden;
-            _limit = limit;
+            _limit = limit > 0 ? limit : DefaultLimit;
+            _offset = Math.Max(0, offset);
             TaskCompleted = false;
             _resetEvent.Reset();
         }
@@ -80,7 +84,8 @@ namespace RevitMCPCommandSet.Services
 
                 // 合并所有类别
                 List<string> allCategories = new List<string>();
-                if (_modelCategoryList == null && _annotationCategoryList == null)
+                if ((_modelCategoryList == null || _modelCategoryList.Count == 0)
+                    && (_annotationCategoryList == null || _annotationCategoryList.Count == 0))
                 {
                     allCategories.AddRange(_defaultModelCategories);
                     allCategories.AddRange(_defaultAnnotationCategories);
@@ -91,17 +96,15 @@ namespace RevitMCPCommandSet.Services
                     allCategories.AddRange(_annotationCategoryList ?? new List<string>());
                 }
 
-                // 获取当前视图中的所有元素
+                // 获取当前视图中的元素 Id（避免一次性加载全部 Element 对象）
                 var collector = new FilteredElementCollector(doc, activeView.Id)
                     .WhereElementIsNotElementType();
 
-                // 获取所有元素
-                IList<Element> elements = collector.ToElements();
+                ICollection<ElementId> elementIds;
 
                 // 按类别筛选
                 if (allCategories.Count > 0)
                 {
-                    // 转换字符串类别为枚举
                     List<BuiltInCategory> builtInCategories = new List<BuiltInCategory>();
                     foreach (string categoryName in allCategories)
                     {
@@ -110,42 +113,58 @@ namespace RevitMCPCommandSet.Services
                             builtInCategories.Add(category);
                         }
                     }
-                    // 如果成功解析了类别，则使用类别过滤器
                     if (builtInCategories.Count > 0)
                     {
                         ElementMulticategoryFilter categoryFilter = new ElementMulticategoryFilter(builtInCategories);
-                        elements = new FilteredElementCollector(doc, activeView.Id)
+                        elementIds = new FilteredElementCollector(doc, activeView.Id)
                             .WhereElementIsNotElementType()
                             .WherePasses(categoryFilter)
-                            .ToElements();
+                            .ToElementIds();
+                    }
+                    else
+                    {
+                        elementIds = collector.ToElementIds();
                     }
                 }
-
-                // 过滤隐藏的元素
-                if (!_includeHidden)
+                else
                 {
-                    elements = elements.Where(e => !e.IsHidden(activeView)).ToList();
+                    elementIds = collector.ToElementIds();
                 }
 
-                // 限制返回数量
-                if (_limit > 0 && elements.Count > _limit)
+                // 过滤隐藏的元素（仅检查可见性，不构建完整属性）
+                List<ElementId> visibleIds = new List<ElementId>(elementIds.Count);
+                foreach (ElementId id in elementIds)
                 {
-                    elements = elements.Take(_limit).ToList();
+                    Element element = doc.GetElement(id);
+                    if (element == null)
+                        continue;
+                    if (_includeHidden || !element.IsHidden(activeView))
+                        visibleIds.Add(id);
                 }
 
-                // 构建结果
-                var elementInfos = elements.Select(e => new ElementInfo
+                int totalCount = visibleIds.Count;
+                var pageIds = visibleIds.Skip(_offset).Take(_limit).ToList();
+                bool hasMore = _offset + pageIds.Count < totalCount;
+
+                // 仅为当前页构建详细结果
+                var elementInfos = pageIds.Select(id =>
                 {
+                    Element e = doc.GetElement(id);
+                    if (e == null)
+                        return null;
+                    return new ElementInfo
+                    {
 #if REVIT2024_OR_GREATER
-                    Id = e.Id.Value,
+                        Id = e.Id.Value,
 #else
-                    Id = e.Id.IntegerValue,
+                        Id = e.Id.IntegerValue,
 #endif
-                    UniqueId = e.UniqueId,
-                    Name = e.Name,
-                    Category = e.Category?.Name ?? "unknow",
-                    Properties = GetElementProperties(e)
-                }).ToList();
+                        UniqueId = e.UniqueId,
+                        Name = e.Name,
+                        Category = e.Category?.Name ?? "unknow",
+                        Properties = GetElementProperties(e)
+                    };
+                }).Where(info => info != null).ToList();
 
                 ResultInfo = new ViewElementsResult
                 {
@@ -157,12 +176,16 @@ namespace RevitMCPCommandSet.Services
                     ViewName = activeView.Name,
                     TotalElementsInView = new FilteredElementCollector(doc, activeView.Id).GetElementCount(),
                     FilteredElementCount = elementInfos.Count,
+                    TotalCount = totalCount,
+                    HasMore = hasMore,
+                    Offset = _offset,
+                    Limit = _limit,
                     Elements = elementInfos
                 };
             }
             catch (Exception ex)
             {
-                TaskDialog.Show("error", ex.Message);
+                System.Diagnostics.Trace.WriteLine($"get_current_view_elements failed: {ex}");
             }
             finally
             {
@@ -175,50 +198,67 @@ namespace RevitMCPCommandSet.Services
         {
             var properties = new Dictionary<string, string>();
 
-            // 添加通用属性
-#if REVIT2024_OR_GREATER
-            properties.Add("ElementId", element.Id.Value.ToString());
-#else
-            properties.Add("ElementId", element.Id.IntegerValue.ToString());
-#endif
-            if (element.Location != null)
+            try
             {
-                if (element.Location is LocationPoint locationPoint)
+                // 添加通用属性
+#if REVIT2024_OR_GREATER
+                properties.Add("ElementId", element.Id.Value.ToString());
+#else
+                properties.Add("ElementId", element.Id.IntegerValue.ToString());
+#endif
+                if (element.Location != null)
                 {
-                    var point = locationPoint.Point;
-                    properties.Add("LocationX", point.X.ToString("F2"));
-                    properties.Add("LocationY", point.Y.ToString("F2"));
-                    properties.Add("LocationZ", point.Z.ToString("F2"));
+                    if (element.Location is LocationPoint locationPoint)
+                    {
+                        var point = locationPoint.Point;
+                        properties.Add("LocationX", point.X.ToString("F2"));
+                        properties.Add("LocationY", point.Y.ToString("F2"));
+                        properties.Add("LocationZ", point.Z.ToString("F2"));
+                    }
+                    else if (element.Location is LocationCurve locationCurve)
+                    {
+                        var curve = locationCurve.Curve;
+                        if (curve != null)
+                        {
+                            if (curve.IsBound)
+                            {
+                                properties.Add("Start", $"{curve.GetEndPoint(0).X:F2}, {curve.GetEndPoint(0).Y:F2}, {curve.GetEndPoint(0).Z:F2}");
+                                properties.Add("End", $"{curve.GetEndPoint(1).X:F2}, {curve.GetEndPoint(1).Y:F2}, {curve.GetEndPoint(1).Z:F2}");
+                                properties.Add("Length", curve.Length.ToString("F2"));
+                            }
+                            else
+                            {
+                                properties.Add("CurveType", "Unbound");
+                            }
+                        }
+                    }
                 }
-                else if (element.Location is LocationCurve locationCurve)
+
+                // 获取常用参数值
+                var commonParams = new[] { "Comments", "Mark", "Level", "Family", "Type" };
+                foreach (var paramName in commonParams)
                 {
-                    var curve = locationCurve.Curve;
-                    properties.Add("Start", $"{curve.GetEndPoint(0).X:F2}, {curve.GetEndPoint(0).Y:F2}, {curve.GetEndPoint(0).Z:F2}");
-                    properties.Add("End", $"{curve.GetEndPoint(1).X:F2}, {curve.GetEndPoint(1).Y:F2}, {curve.GetEndPoint(1).Z:F2}");
-                    properties.Add("Length", curve.Length.ToString("F2"));
+                    Parameter param = element.LookupParameter(paramName);
+                    if (param != null && !param.IsReadOnly)
+                    {
+                        if (param.StorageType == StorageType.String)
+                            properties.Add(paramName, param.AsString() ?? "");
+                        else if (param.StorageType == StorageType.Double)
+                            properties.Add(paramName, param.AsDouble().ToString("F2"));
+                        else if (param.StorageType == StorageType.Integer)
+                            properties.Add(paramName, param.AsInteger().ToString());
+                        else if (param.StorageType == StorageType.ElementId)
+#if REVIT2024_OR_GREATER
+                            properties.Add(paramName, param.AsElementId().Value.ToString());
+#else
+                            properties.Add(paramName, param.AsElementId().IntegerValue.ToString());
+#endif
+                    }
                 }
             }
-
-            // 获取常用参数值
-            var commonParams = new[] { "Comments", "Mark", "Level", "Family", "Type" };
-            foreach (var paramName in commonParams)
+            catch (Exception ex)
             {
-                Parameter param = element.LookupParameter(paramName);
-                if (param != null && !param.IsReadOnly)
-                {
-                    if (param.StorageType == StorageType.String)
-                        properties.Add(paramName, param.AsString() ?? "");
-                    else if (param.StorageType == StorageType.Double)
-                        properties.Add(paramName, param.AsDouble().ToString("F2"));
-                    else if (param.StorageType == StorageType.Integer)
-                        properties.Add(paramName, param.AsInteger().ToString());
-                    else if (param.StorageType == StorageType.ElementId)
-#if REVIT2024_OR_GREATER
-                        properties.Add(paramName, param.AsElementId().Value.ToString());
-#else
-                        properties.Add(paramName, param.AsElementId().IntegerValue.ToString());
-#endif
-                }
+                properties["PropertiesError"] = ex.Message;
             }
 
             return properties;

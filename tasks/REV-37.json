@@ -1,0 +1,27 @@
+{
+  "identifier": "REV-37",
+  "title": "Отрисовка таблицы ТЭП по эталону листа «Общие данные»",
+  "type": "feature",
+  "phase": "block-2-tep",
+  "priority": "P1",
+  "confidence": "yellow",
+  "estimateDays": 6,
+  "customerProblems": [3, 5],
+  "labels": ["commandset", "server", "schedules", "tep"],
+  "dependencies": ["REV-26", "REV-27", "REV-23"],
+  "mcpTools": ["render_tep_table"],
+  "files": [
+    "server/src/tools/render_tep_table.ts (new)",
+    "commandset/Services/Views/RenderTepTableEventHandler.cs (new)",
+    "commandset/Commands/Views/RenderTepTableCommand.cs (new)",
+    "command.json"
+  ],
+  "description": "Закрывает частичный пункт №3: сейчас export_tep_data отдаёт только данные, «умной» отрисовки таблицы нет. По структуре эталонной спецификации (get_schedule_definition, напр. О_АР_Квартиры_ТЭП в % / шаблон ADSK_О_С_С шапкой) и типоразмерам текста (get_document_styles) построить таблицу ТЭП, наполнить значениями из export_tep_data и разместить на листе «Общие данные».",
+  "acceptanceCriteria": [
+    "Таблица ТЭП по составу строк/столбцов и типоразмерам текста совпадает с эталоном",
+    "Значения = export_tep_data (единицы мм/м²/м³)",
+    "Размещается на листе «Общие данные»",
+    "Не используется send_code_to_revit",
+    "Проверено на файле заказчика и на Revit 2022/2023"
+  ]
+}

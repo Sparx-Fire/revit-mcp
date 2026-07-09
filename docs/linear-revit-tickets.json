@@ -1,0 +1,519 @@
+{
+  "meta": {
+    "team": "Revit",
+    "identifierPrefix": "REV",
+    "identifierStart": 2,
+    "source": "Customer feedback — Cursor + Revit 2023",
+    "createdAt": "2026-06-25",
+    "sprints": {
+      "sprint-1": { "weeks": "1-2", "focus": "Quick wins — high confidence" },
+      "sprint-2": { "weeks": "3-4", "focus": "Core RD features" },
+      "sprint-3": { "weeks": "5-6", "focus": "Annotation quality + batch" }
+    },
+    "assignees": {
+      "dev-a": { "name": "Dev A", "track": "Platform & Data" },
+      "dev-b": { "name": "Dev B", "track": "Documentation & Annotation" }
+    },
+    "linearPriorityMap": {
+      "P0": 2,
+      "P1": 3,
+      "P2": 4
+    },
+    "confidenceLabels": {
+      "green": "Высокая уверенность — стартовать первым",
+      "yellow": "Средняя — после green тикетов",
+      "red": "Сложная — после зависимостей"
+    }
+  },
+  "issues": [
+    {
+      "identifier": "REV-2",
+      "title": "Автостарт MCP-сервера при запуске Revit",
+      "assignee": "dev-a",
+      "priority": "P0",
+      "linearPriority": 2,
+      "confidence": "green",
+      "sprint": "sprint-1",
+      "estimateDays": 2,
+      "orderInSprint": 1,
+      "customerProblems": [4],
+      "labels": ["plugin", "ux", "stability"],
+      "dependencies": [],
+      "files": [
+        "plugin/Core/Application.cs",
+        "plugin/Core/SocketService.cs",
+        "plugin/UI/CommandSetSettingsPage.xaml"
+      ],
+      "description": "Сейчас MCP-сервер в Revit включается вручную кнопкой «Revit MCP Switch». Нужен автостарт при открытии Revit с настройкой в Settings (вкл/выкл) и визуальным индикатором статуса на ленте.",
+      "acceptanceCriteria": [
+        "При открытии Revit сервер стартует автоматически, если включено в настройках",
+        "Индикатор на ленте: подключено / выключено",
+        "Кнопка Switch по-прежнему работает для ручного вкл/выкл",
+        "Настройка автозапуска сохраняется между сессиями"
+      ]
+    },
+    {
+      "identifier": "REV-3",
+      "title": "Тайминги и логирование MCP-команд",
+      "assignee": "dev-a",
+      "priority": "P0",
+      "linearPriority": 2,
+      "confidence": "green",
+      "sprint": "sprint-1",
+      "estimateDays": 2,
+      "orderInSprint": 2,
+      "customerProblems": [1, 4],
+      "labels": ["plugin", "server", "observability"],
+      "dependencies": [],
+      "files": [
+        "plugin/Utils/Logger.cs",
+        "plugin/Core/SocketService.cs",
+        "server/src/utils/ConnectionManager.ts"
+      ],
+      "description": "Добавить логирование каждой команды: имя, длительность, размер ответа, успех/ошибка. Нужно для диагностики медленных и нестабильных операций на проектах заказчика.",
+      "acceptanceCriteria": [
+        "Каждая команда пишет в лог: command, durationMs, success, responseSize",
+        "Лог доступен пользователю (файл или UI в Settings)",
+        "Можно определить топ-3 самых медленных команд на реальном проекте",
+        "Ошибки содержат stack trace / сообщение Revit API"
+      ]
+    },
+    {
+      "identifier": "REV-4",
+      "title": "Persistent WebSocket-соединение MCP ↔ Revit",
+      "assignee": "dev-a",
+      "priority": "P0",
+      "linearPriority": 2,
+      "confidence": "green",
+      "sprint": "sprint-1",
+      "estimateDays": 3,
+      "orderInSprint": 3,
+      "customerProblems": [1],
+      "labels": ["server", "performance"],
+      "dependencies": [],
+      "files": [
+        "server/src/utils/ConnectionManager.ts",
+        "server/src/utils/SocketClient.ts"
+      ],
+      "description": "Каждый MCP-вызов сейчас открывает и закрывает TCP-соединение на порту 8080. Нужно одно persistent-соединение на сессию Cursor с корректным reconnect при перезапуске Revit.",
+      "acceptanceCriteria": [
+        "Соединение устанавливается один раз при первом вызове",
+        "Повторные вызовы не переподключаются",
+        "Reconnect при обрыве (Revit перезапущен / сервер остановлен)",
+        "say_hello и analyze_model_statistics быстрее минимум на 30% vs baseline"
+      ]
+    },
+    {
+      "identifier": "REV-5",
+      "title": "validate_schedule — сверка спецификации с моделью",
+      "assignee": "dev-a",
+      "priority": "P0",
+      "linearPriority": 2,
+      "confidence": "green",
+      "sprint": "sprint-1",
+      "estimateDays": 4,
+      "orderInSprint": 4,
+      "customerProblems": [6],
+      "labels": ["commandset", "server", "schedules", "validation"],
+      "dependencies": [],
+      "files": [
+        "commandset/Commands/DataExtraction/ValidateScheduleCommand.cs",
+        "server/src/tools/validate_schedule.ts",
+        "command.json",
+        "tests/commandset/"
+      ],
+      "description": "Новая команда: принимает категорию (Doors/Windows/Floors) и опционально уровень/фильтр. Возвращает количество элементов в модели, количество в спецификации, расхождение и список пропущенных ID.",
+      "acceptanceCriteria": [
+        "Работает для Doors, Windows, Floors",
+        "Ответ: modelCount, scheduleCount, diff, missingIds[]",
+        "MCP tool зарегистрирован",
+        "Протестировано на проекте заказчика (башня.rvt)",
+        "Интеграционный тест в tests/commandset/"
+      ]
+    },
+    {
+      "identifier": "REV-6",
+      "title": "Пагинация и лимиты в тяжёлых командах",
+      "assignee": "dev-a",
+      "priority": "P1",
+      "linearPriority": 3,
+      "confidence": "yellow",
+      "sprint": "sprint-2",
+      "estimateDays": 3,
+      "orderInSprint": 1,
+      "customerProblems": [1],
+      "labels": ["commandset", "server", "performance"],
+      "dependencies": ["REV-4"],
+      "files": [
+        "commandset/Commands/AIElementFilterCommand.cs",
+        "commandset/Services/GetCurrentViewElementsEventHandler.cs",
+        "server/src/tools/ai_element_filter.ts",
+        "server/src/tools/get_current_view_elements.ts"
+      ],
+      "description": "Добавить limit и offset в ai_element_filter и get_current_view_elements. По умолчанию limit=500. Возвращать totalCount и hasMore для больших моделей (40k+ элементов).",
+      "acceptanceCriteria": [
+        "Запрос без limit возвращает max 500 элементов",
+        "Ответ содержит totalCount и hasMore",
+        "offset работает для постраничной загрузки",
+        "На модели 43k элементов ответ < 5 сек",
+        "Описание параметров в MCP tool schema"
+      ]
+    },
+    {
+      "identifier": "REV-7",
+      "title": "Кэш analyze_model_statistics",
+      "assignee": "dev-a",
+      "priority": "P1",
+      "linearPriority": 3,
+      "confidence": "yellow",
+      "sprint": "sprint-2",
+      "estimateDays": 2,
+      "orderInSprint": 2,
+      "customerProblems": [1, 13],
+      "labels": ["server", "performance", "cache"],
+      "dependencies": ["REV-4"],
+      "files": [
+        "server/src/utils/ModelCache.ts",
+        "server/src/tools/analyze_model_statistics.ts"
+      ],
+      "description": "Кэш результата analyze_model_statistics на MCP-сервере. Ключ: имя проекта. TTL: 60 сек. Инвалидация при изменении модели.",
+      "acceptanceCriteria": [
+        "Повторный вызов в течение 60 сек возвращает кэш",
+        "В ответе флаг cached: true/false",
+        "Кэш инвалидируется при сохранении проекта или по TTL",
+        "Не ломает актуальность при активном редактировании"
+      ]
+    },
+    {
+      "identifier": "REV-8",
+      "title": "export_tep_data — структурированные данные для ТЭП",
+      "assignee": "dev-a",
+      "priority": "P1",
+      "linearPriority": 3,
+      "confidence": "yellow",
+      "sprint": "sprint-2",
+      "estimateDays": 5,
+      "orderInSprint": 3,
+      "customerProblems": [5],
+      "labels": ["commandset", "server", "data-extraction", "tep"],
+      "dependencies": ["REV-5"],
+      "files": [
+        "commandset/Services/DataExtraction/ExportTepDataEventHandler.cs",
+        "commandset/Commands/DataExtraction/ExportTepDataCommand.cs",
+        "server/src/tools/export_tep_data.ts",
+        "command.json"
+      ],
+      "description": "Команда агрегирует данные для технико-экономических показателей: площадь застройки, общая площадь, этажность, площади по уровням, объём, помещения по назначению. Только данные — без оформления таблицы.",
+      "acceptanceCriteria": [
+        "JSON с полями ТЭП из реальной модели заказчика",
+        "Единицы: мм, м², м³ (конвертация из внутренних единиц Revit)",
+        "MCP tool зарегистрирован",
+        "Интеграционный тест",
+        "Время выполнения < 30 сек на модели 43k элементов"
+      ]
+    },
+    {
+      "identifier": "REV-9",
+      "title": "batch_execute — пакетное выполнение команд",
+      "assignee": "dev-a",
+      "priority": "P2",
+      "linearPriority": 4,
+      "confidence": "red",
+      "sprint": "sprint-3",
+      "estimateDays": 5,
+      "orderInSprint": 1,
+      "customerProblems": [1],
+      "labels": ["server", "plugin", "performance"],
+      "dependencies": ["REV-4", "REV-6"],
+      "files": [
+        "plugin/Core/SocketService.cs",
+        "server/src/tools/batch_execute.ts",
+        "command.json"
+      ],
+      "description": "Один MCP-вызов принимает массив команд, выполняет последовательно в Revit, возвращает массив результатов. Сокращает цепочки из 10+ round-trip до одного.",
+      "acceptanceCriteria": [
+        "batch_execute([{ command, params }, ...]) работает",
+        "Один WebSocket round-trip на цепочку",
+        "Ошибка в одной команде не ломает остальные (partial success)",
+        "Лимит на размер batch (например 20 команд)",
+        "Документация и пример использования в README"
+      ]
+    },
+    {
+      "identifier": "REV-10",
+      "title": "Cursor Rules для проектировщиков заказчика",
+      "assignee": "dev-b",
+      "priority": "P0",
+      "linearPriority": 2,
+      "confidence": "green",
+      "sprint": "sprint-1",
+      "estimateDays": 2,
+      "orderInSprint": 1,
+      "customerProblems": [2, 12],
+      "labels": ["documentation", "cursor", "rules"],
+      "dependencies": [],
+      "files": [
+        ".cursor/rules/revit-mcp.md",
+        "docs/user-guide-revit-mcp.md"
+      ],
+      "description": "Пакет Cursor Rules: использовать только MCP tools для Revit; не редактировать файлы репозитория; ТЭП и ведомости только через шаблоны проекта; базовые требования к оформлению и единицам измерения.",
+      "acceptanceCriteria": [
+        "Файл правил в репозитории (.cursor/rules/)",
+        "Инструкция по установке для проектировщика (1 страница)",
+        "Агент не редактирует код при типовых запросах к Revit",
+        "Правила покрывают: единицы, шаблоны, запрет send_code_to_revit без необходимости"
+      ]
+    },
+    {
+      "identifier": "REV-11",
+      "title": "Обёртки спецификаций: двери / окна / полы",
+      "assignee": "dev-b",
+      "priority": "P0",
+      "linearPriority": 2,
+      "confidence": "green",
+      "sprint": "sprint-1",
+      "estimateDays": 4,
+      "orderInSprint": 2,
+      "customerProblems": [6],
+      "labels": ["server", "commandset", "schedules"],
+      "dependencies": [],
+      "files": [
+        "server/src/tools/create_door_schedule.ts",
+        "server/src/tools/create_window_schedule.ts",
+        "server/src/tools/create_floor_schedule.ts",
+        "commandset/Services/DataExtraction/CreateScheduleDataEventHandler.cs"
+      ],
+      "description": "Три MCP tool — структурированный экспорт данных для спецификаций дверей, окон и полов: марка, тип, размер, уровень, количество. Группировка по типу семейства. Основа для create_schedule и validate_schedule.",
+      "acceptanceCriteria": [
+        "create_door_schedule возвращает таблицу с группировкой по типу",
+        "create_window_schedule и create_floor_schedule аналогично",
+        "Количество совпадает с ручной спецификацией в Revit (±0)",
+        "Протестировано на башня.rvt: Doors=156, Windows=1414, Floors=58",
+        "MCP tools зарегистрированы"
+      ]
+    },
+    {
+      "identifier": "REV-12",
+      "title": "export_room_finish_data — экспорт данных отделки",
+      "assignee": "dev-b",
+      "priority": "P0",
+      "linearPriority": 2,
+      "confidence": "green",
+      "sprint": "sprint-1",
+      "estimateDays": 4,
+      "orderInSprint": 3,
+      "customerProblems": [7],
+      "labels": ["commandset", "server", "data-extraction", "finishes"],
+      "dependencies": [],
+      "files": [
+        "commandset/Services/DataExtraction/ExportRoomFinishDataEventHandler.cs",
+        "commandset/Commands/DataExtraction/ExportRoomFinishDataCommand.cs",
+        "server/src/tools/export_room_finish_data.ts",
+        "command.json"
+      ],
+      "description": "Экспорт finish-данных помещений: отделка стен/пола/потолка, материалы граней, площади. Только чтение — без создания ведомости. Основа для create_finish_schedule.",
+      "acceptanceCriteria": [
+        "Для каждого помещения: roomId, floorFinish, wallFinish, ceilingFinish, materials[]",
+        "Работает на башня.rvt (239 помещений)",
+        "Если finish не заполнен — null + warning в ответе",
+        "Время выполнения < 30 сек",
+        "Интеграционный тест"
+      ]
+    },
+    {
+      "identifier": "REV-13",
+      "title": "create_schedule — создание спецификации по шаблону",
+      "assignee": "dev-b",
+      "priority": "P1",
+      "linearPriority": 3,
+      "confidence": "yellow",
+      "sprint": "sprint-2",
+      "estimateDays": 7,
+      "orderInSprint": 1,
+      "customerProblems": [3, 5],
+      "labels": ["commandset", "server", "schedules"],
+      "dependencies": ["REV-11"],
+      "files": [
+        "commandset/Models/Views/ScheduleCreationInfo.cs",
+        "commandset/Commands/Views/CreateScheduleCommand.cs",
+        "commandset/Services/Views/CreateScheduleEventHandler.cs",
+        "server/src/tools/create_schedule.ts",
+        "command.json"
+      ],
+      "description": "Реализовать команду на базе ScheduleCreationInfo: создание ViewSchedule, поля, фильтры, применение templateId из проекта. Заменяет send_code_to_revit для ведомостей.",
+      "acceptanceCriteria": [
+        "Создаёт спецификацию Doors/Windows/Rooms по шаблону проекта",
+        "Применяет templateId — сохраняет оформление шаблона",
+        "MCP tool + интеграционный тест",
+        "Не использует send_code_to_revit",
+        "Работает на Revit 2023+"
+      ]
+    },
+    {
+      "identifier": "REV-14",
+      "title": "create_sheet + place_view_on_sheet",
+      "assignee": "dev-b",
+      "priority": "P1",
+      "linearPriority": 3,
+      "confidence": "yellow",
+      "sprint": "sprint-2",
+      "estimateDays": 6,
+      "orderInSprint": 2,
+      "customerProblems": [8],
+      "labels": ["commandset", "server", "sheets"],
+      "dependencies": ["REV-13"],
+      "files": [
+        "commandset/Models/Views/SheetCreationInfo.cs",
+        "commandset/Models/Views/ViewportCreationInfo.cs",
+        "commandset/Commands/Views/CreateSheetCommand.cs",
+        "commandset/Commands/Views/PlaceViewOnSheetCommand.cs",
+        "server/src/tools/create_sheet.ts",
+        "server/src/tools/place_view_on_sheet.ts",
+        "command.json"
+      ],
+      "description": "Создание листа с title block из проекта и размещение вида/спецификации по координатам (мм). Базовый сценарий: лист + план + спецификация.",
+      "acceptanceCriteria": [
+        "create_sheet создаёт лист с title block из проекта",
+        "place_view_on_sheet размещает вид или спецификацию по координатам (мм)",
+        "Сценарий: лист → план → спецификация дверей",
+        "Протестировано на башня.rvt",
+        "Интеграционный тест"
+      ]
+    },
+    {
+      "identifier": "REV-15",
+      "title": "create_finish_schedule — ведомость отделки",
+      "assignee": "dev-b",
+      "priority": "P1",
+      "linearPriority": 3,
+      "confidence": "yellow",
+      "sprint": "sprint-2",
+      "estimateDays": 7,
+      "orderInSprint": 3,
+      "customerProblems": [7],
+      "labels": ["commandset", "server", "schedules", "finishes"],
+      "dependencies": ["REV-12", "REV-13"],
+      "files": [
+        "commandset/Services/Views/CreateFinishScheduleEventHandler.cs",
+        "commandset/Commands/Views/CreateFinishScheduleCommand.cs",
+        "server/src/tools/create_finish_schedule.ts",
+        "command.json"
+      ],
+      "description": "Создание ведомости отделки (Key Schedule / Material Takeoff) из данных export_room_finish_data с применением шаблона проекта.",
+      "acceptanceCriteria": [
+        "Создаёт ведомость отделки по шаблону проекта",
+        "Строки = помещения, колонки = тип отделки",
+        "Warning если >30% помещений без finish-данных",
+        "Время выполнения < 60 сек",
+        "Не использует send_code_to_revit"
+      ]
+    },
+    {
+      "identifier": "REV-16",
+      "title": "Доработка create_dimensions — стили и цепочки",
+      "assignee": "dev-b",
+      "priority": "P2",
+      "linearPriority": 4,
+      "confidence": "red",
+      "sprint": "sprint-3",
+      "estimateDays": 6,
+      "orderInSprint": 1,
+      "customerProblems": [10],
+      "labels": ["commandset", "server", "annotations", "dimensions"],
+      "dependencies": ["REV-10"],
+      "files": [
+        "commandset/Services/AnnotationComponents/CreateDimensionEventHandler.cs",
+        "commandset/Commands/AnnotationComponents/CreateDimensionCommand.cs",
+        "commandset/Commands/AnnotationComponents/DimensionRoomWallsCommand.cs",
+        "server/src/tools/create_dimensions.ts",
+        "server/src/tools/dimension_room_walls.ts"
+      ],
+      "description": "Подбор DimensionType из проекта по имени. Новая команда dimension_room_walls — цепочка размеров по стенам помещения. Отступы в мм вместо hardcoded 1 foot.",
+      "acceptanceCriteria": [
+        "Размеры используют DimensionType из проекта",
+        "dimension_room_walls(roomId) создаёт цепочку на активном плане",
+        "Отступы задаются в мм",
+        "Тест на одном помещении башня.rvt",
+        "Не ломает существующий create_dimensions API"
+      ]
+    },
+    {
+      "identifier": "REV-17",
+      "title": "Доработка create_grid — отображение осей на видах",
+      "assignee": "dev-b",
+      "priority": "P2",
+      "linearPriority": 4,
+      "confidence": "red",
+      "sprint": "sprint-3",
+      "estimateDays": 5,
+      "orderInSprint": 2,
+      "customerProblems": [9],
+      "labels": ["commandset", "server", "annotations", "grids"],
+      "dependencies": [],
+      "files": [
+        "commandset/Services/CreateGridEventHandler.cs",
+        "commandset/Commands/CreateGridCommand.cs",
+        "commandset/Commands/ConfigureGridDisplayCommand.cs",
+        "server/src/tools/create_grid.ts",
+        "server/src/tools/configure_grid_display.ts"
+      ],
+      "description": "2D-экстенты осей по всем уровням, стиль пузырей из GridType проекта. Команда configure_grid_display для исправления существующих осей без пересоздания.",
+      "acceptanceCriteria": [
+        "Новые оси видны на всех планах этажей",
+        "Пузыри соответствуют GridType проекта",
+        "configure_grid_display исправляет существующие оси",
+        "Не ломает существующий create_grid API",
+        "Интеграционный тест"
+      ]
+    }
+  ],
+  "backlog": [
+    {
+      "title": "Автоматическое создание узлов",
+      "customerProblems": [11],
+      "reason": "Нет команд, высокая сложность — после стабилизации базового оформления",
+      "suggestedIdentifier": "REV-18"
+    },
+    {
+      "title": "MCP-сервер нормативов (ГОСТ/СП/SN RK) с RAG",
+      "customerProblems": [2],
+      "reason": "Отдельный проект вне Revit commandset",
+      "suggestedIdentifier": "REV-19"
+    },
+    {
+      "title": "auto_layout_sheet — автокомпоновка листа по правилам",
+      "customerProblems": [8],
+      "reason": "Зависит от REV-14",
+      "suggestedIdentifier": "REV-20"
+    }
+  ],
+  "sprintPlan": {
+    "sprint-1": {
+      "dev-a": ["REV-2", "REV-3", "REV-4", "REV-5"],
+      "dev-b": ["REV-10", "REV-11", "REV-12"]
+    },
+    "sprint-2": {
+      "dev-a": ["REV-6", "REV-7", "REV-8"],
+      "dev-b": ["REV-13", "REV-14", "REV-15"]
+    },
+    "sprint-3": {
+      "dev-a": ["REV-9"],
+      "dev-b": ["REV-16", "REV-17"]
+    }
+  },
+  "customerProblemIndex": {
+    "1": "Долгое выполнение команд",
+    "2": "Нет загрузки ГОСТ/СП",
+    "3": "Сложности с таблицами и ведомостями",
+    "4": "Нестабильная работа функций",
+    "5": "ТЭП оформляется некорректно",
+    "6": "Спецификации дверей/окон/полов — нужна проверка",
+    "7": "Ведомость отделки — долго, не работает",
+    "8": "Компоновка листов",
+    "9": "Координационные оси",
+    "10": "Размерные линии",
+    "11": "Узлы не тестировались",
+    "12": "Моделирование вручную быстрее",
+    "13": "ИИ эффективен только для анализа"
+  }
+}

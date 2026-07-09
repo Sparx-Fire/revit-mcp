@@ -1,0 +1,25 @@
+{
+  "identifier": "REV-35",
+  "title": "check_min_dimensions — мин. размеры лоджии/балкона/противопожарного простенка",
+  "type": "feature",
+  "phase": "block-1-normatives",
+  "priority": "P1",
+  "confidence": "red",
+  "estimateDays": 3,
+  "customerProblems": [2],
+  "labels": ["commandset", "server", "normatives"],
+  "dependencies": ["REV-29", "REV-31"],
+  "mcpTools": ["check_min_dimensions"],
+  "files": [
+    "server/src/tools/check_min_dimensions.ts (new)",
+    "commandset/Services/Normatives/CheckMinDimensionsEventHandler.cs (new)",
+    "command.json"
+  ],
+  "description": "Живой запрос заказчика: «необходимые минимальные размеры лоджии, балкона, противопожарного простенка». Проверить минимальные габариты/расстояния по норме против фактической геометрии (REV-31). Наиболее сложный из пилотных сценариев (расстояния между проёмами, идентификация лоджий/балконов).",
+  "acceptanceCriteria": [
+    "Возвращает минимальные размеры по норме (с цитатой) и фактические значения",
+    "Корректно идентифицирует лоджии/балконы и простенки",
+    "Список нарушений с id и режимы отчёт/подсветка",
+    "Проверено на файле заказчика"
+  ]
+}

@@ -12,6 +12,8 @@ namespace revit_mcp_plugin.Core
         {
             try
             {
+                RibbonStatusManager.Initialize(commandData.Application);
+
                 // 获取socket服务
                 // Obtain socket service.
                 SocketService service = SocketService.Instance;
@@ -27,6 +29,8 @@ namespace revit_mcp_plugin.Core
                     service.Start();
                     TaskDialog.Show("revitMCP", "Open Server");
                 }
+
+                RibbonStatusManager.UpdateStatus(service.IsRunning);
 
                 return Result.Succeeded;
             }

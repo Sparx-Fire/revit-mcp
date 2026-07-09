@@ -1,0 +1,27 @@
+{
+  "identifier": "REV-39",
+  "title": "auto_layout_sheet — умная автокомпоновка листа",
+  "type": "feature",
+  "phase": "block-5-autolayout",
+  "priority": "P2",
+  "confidence": "red",
+  "estimateDays": 8,
+  "customerProblems": [8],
+  "labels": ["commandset", "server", "sheets", "layout"],
+  "dependencies": ["REV-22"],
+  "mcpTools": ["auto_layout_sheet"],
+  "files": [
+    "server/src/tools/auto_layout_sheet.ts (new)",
+    "commandset/Services/Views/AutoLayoutSheetEventHandler.cs (new)",
+    "commandset/Commands/Views/AutoLayoutSheetCommand.cs (new)",
+    "command.json"
+  ],
+  "description": "Закрывает частичный пункт №6: сейчас размещение только по ручным координатам. Реализовать авто-расстановку видов и спецификаций по правилам (сетка, зазоры, порядок, зона основной надписи) с учётом фактических габаритов элементов и без наложений. Поверх существующих create_sheet / place_view_on_sheet.",
+  "acceptanceCriteria": [
+    "Раскладывает набор видов/спецификаций без наложений и без ручных координат",
+    "Учитывает габариты (Viewport.GetBoxOutline, ScheduleSheetInstance) и зону штампа",
+    "Сценарий «лист + план + спецификация» собирается автоматически",
+    "Проверено на файле заказчика; интеграционный тест",
+    "Не используется send_code_to_revit"
+  ]
+}

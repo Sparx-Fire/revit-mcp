@@ -9,6 +9,7 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
@@ -18,8 +19,22 @@
             <TextBlock Text="Select the commands you want to enable" 
                        Foreground="#666666" Margin="0,5,0,0"/>
         </StackPanel>
+        <!-- MCP Server Settings -->
+        <Border Grid.Row="1" BorderBrush="#e0e0e0" BorderThickness="1" Margin="0,0,0,15" Padding="12">
+            <StackPanel>
+                <TextBlock Text="MCP Server" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                <CheckBox x:Name="AutoStartCheckBox"
+                          Content="Start MCP server automatically when Revit opens"
+                          ToolTip="When enabled, the MCP server starts as soon as Revit is ready."/>
+                <TextBlock Text="Command timing and diagnostics are written to the Logs folder."
+                           Foreground="#666666" Margin="0,10,0,6" TextWrapping="Wrap"/>
+                <Button Content="Open Logs Folder" Width="140" Height="28" HorizontalAlignment="Left"
+                        Click="OpenLogsFolderButton_Click"
+                        ToolTip="Open the folder containing command-metrics JSONL files for slow-command analysis."/>
+            </StackPanel>
+        </Border>
         <!-- Main Content Area -->
-        <Grid Grid.Row="1">
+        <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="250"/>
                 <ColumnDefinition Width="*"/>
@@ -67,7 +82,19 @@
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <CheckBox IsChecked="{Binding Enabled, Mode=TwoWay}"
-                                                     HorizontalAlignment="Center"/>
+                                                     HorizontalAlignment="Center">
+                                                <CheckBox.Style>
+                                                    <Style TargetType="CheckBox">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsBuiltIn}" Value="True">
+                                                                <Setter Property="IsEnabled" Value="False"/>
+                                                                <Setter Property="ToolTip"
+                                                                        Value="Built-in plugin command — always enabled"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </CheckBox.Style>
+                                            </CheckBox>
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
@@ -88,7 +115,7 @@
             </Border>
         </Grid>
         <!-- Bottom Buttons -->
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0">
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0">
             <Button Content="Open CommandSet Folder" Width="150" Height="30" Margin="0,0,10,0" Click="OpenFolderButton_Click"/>
             <Button Content="Refresh" Width="80" Height="30" Margin="0,0,10,0" Click="RefreshButton_Click"/>
             <Button Content="Select All" Width="80" Height="30" Margin="0,0,10,0" Click="SelectAllButton_Click"/>

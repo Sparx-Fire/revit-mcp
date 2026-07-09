@@ -45,10 +45,22 @@ public class ViewportCreationInfo
     public int SheetId { get; set; }
 
     /// <summary>
+    ///     Sheet unique ID (alternative to sheetId)
+    /// </summary>
+    [JsonProperty("sheetUniqueId")]
+    public string SheetUniqueId { get; set; } = string.Empty;
+
+    /// <summary>
     ///     View ID to place in viewport
     /// </summary>
     [JsonProperty("viewId")]
     public int ViewId { get; set; }
+
+    /// <summary>
+    ///     View unique ID (alternative to viewId)
+    /// </summary>
+    [JsonProperty("viewUniqueId")]
+    public string ViewUniqueId { get; set; } = string.Empty;
 
     /// <summary>
     ///     X position on sheet in millimeters
@@ -97,4 +109,40 @@ public class ViewportCreationInfo
     /// </summary>
     [JsonProperty("parameters")]
     public Dictionary<string, object> Parameters { get; set; }
+}
+
+/// <summary>
+///     Result of placing a view or schedule on a sheet
+/// </summary>
+public class ViewportPlacementResult
+{
+    [JsonProperty("success")]
+    public bool Success { get; set; }
+
+    [JsonProperty("message")]
+    public string Message { get; set; } = string.Empty;
+
+    [JsonProperty("placementType")]
+    public string PlacementType { get; set; } = string.Empty;
+
+    [JsonProperty("elementId")]
+    public long ElementId { get; set; }
+
+    [JsonProperty("elementUniqueId")]
+    public string ElementUniqueId { get; set; } = string.Empty;
+
+    [JsonProperty("sheetId")]
+    public long SheetId { get; set; }
+
+    [JsonProperty("viewId")]
+    public long ViewId { get; set; }
+
+    [JsonProperty("positionX")]
+    public double PositionX { get; set; }
+
+    [JsonProperty("positionY")]
+    public double PositionY { get; set; }
+
+    [JsonProperty("warnings")]
+    public List<string> Warnings { get; set; } = new List<string>();
 }

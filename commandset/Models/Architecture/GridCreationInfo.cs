@@ -98,6 +98,30 @@ public class GridCreationInfo
     public double YStartPosition { get; set; } = 0;
 
     /// <summary>
+    ///     GridType name from the project for bubble style.
+    /// </summary>
+    [JsonProperty("gridTypeName")]
+    public string GridTypeName { get; set; } = string.Empty;
+
+    /// <summary>
+    ///     GridType element ID from the project.
+    /// </summary>
+    [JsonProperty("gridTypeId")]
+    public int GridTypeId { get; set; } = -1;
+
+    /// <summary>
+    ///     Configure 2D grid extents and bubbles on all floor plans after creation.
+    /// </summary>
+    [JsonProperty("configureDisplayOnAllPlans")]
+    public bool ConfigureDisplayOnAllPlans { get; set; } = true;
+
+    /// <summary>
+    ///     Show grid bubbles on floor plans when display is configured.
+    /// </summary>
+    [JsonProperty("showBubbles")]
+    public bool ShowBubbles { get; set; } = true;
+
+    /// <summary>
     /// Validates the grid creation parameters
     /// </summary>
     /// <param name="errorMessage">Error message if validation fails</param>

@@ -1,4 +1,5 @@
 using Autodesk.Revit.UI;
+using RevitMCPCommandSet.Utils;
 using RevitMCPSDK.API.Interfaces;
 
 namespace RevitMCPCommandSet.Services
@@ -47,8 +48,25 @@ namespace RevitMCPCommandSet.Services
                                                          .WhereElementIsNotElementType()
                                                          .ToElements();
 
+                // Skip walls that already have tags in this view
+                HashSet<long> wallsWithExistingTags = new HashSet<long>();
+                FilteredElementCollector existingTagCollector = new FilteredElementCollector(doc, activeView.Id);
+                var existingWallTags = existingTagCollector.OfClass(typeof(IndependentTag))
+                    .WhereElementIsNotElementType()
+                    .Cast<IndependentTag>()
+                    .ToList();
+
+                foreach (IndependentTag existingTag in existingWallTags)
+                {
+                    foreach (ElementId taggedId in existingTag.GetTaggedLocalElementIds())
+                    {
+                        wallsWithExistingTags.Add(taggedId.GetValue());
+                    }
+                }
+
                 // Create wall tags
                 List<object> createdTags = new List<object>();
+                List<object> skippedWalls = new List<object>();
                 List<string> errors = new List<string>();
 
                 using (Transaction tran = new Transaction(doc, "标记墙体"))
@@ -80,6 +98,23 @@ namespace RevitMCPCommandSet.Services
                     foreach (Element wall in walls)
                     {
 #if REVIT2024_OR_GREATER
+                        long wallIdValue = wall.Id.Value;
+#else
+                        long wallIdValue = wall.Id.IntegerValue;
+#endif
+
+                        if (wallsWithExistingTags.Contains(wallIdValue))
+                        {
+                            skippedWalls.Add(new
+                            {
+                                wallId = wallIdValue.ToString(),
+                                wallName = wall.Name,
+                                reason = "Wall already has a tag in this view"
+                            });
+                            continue;
+                        }
+
+#if REVIT2024_OR_GREATER
                         try
                         {
                             // Get the wall's location curve
@@ -110,9 +145,9 @@ namespace RevitMCPCommandSet.Services
                                         wallName = wall.Name,
                                         location = new
                                         {
-                                            x = midpoint.X,
-                                            y = midpoint.Y,
-                                            z = midpoint.Z
+                                            x = midpoint.X * 304.8,
+                                            y = midpoint.Y * 304.8,
+                                            z = midpoint.Z * 304.8
                                         }
                                     });
                                 }
@@ -123,7 +158,7 @@ namespace RevitMCPCommandSet.Services
                             errors.Add($"标记墙体 {wall.Id.Value} 出错: {ex.Message}");
                         }
 #else
-try
+                        try
                         {
                             // Get the wall's location curve
                             LocationCurve locationCurve = wall.Location as LocationCurve;
@@ -153,9 +188,9 @@ try
                                         wallName = wall.Name,
                                         location = new
                                         {
-                                            x = midpoint.X,
-                                            y = midpoint.Y,
-                                            z = midpoint.Z
+                                            x = midpoint.X * 304.8,
+                                            y = midpoint.Y * 304.8,
+                                            z = midpoint.Z * 304.8
                                         }
                                     });
                                 }
@@ -170,13 +205,20 @@ try
 
                     tran.Commit();
 
+                    string resultMessage = skippedWalls.Count > 0
+                        ? $"Created {createdTags.Count} tags. Skipped {skippedWalls.Count} walls that already had tags."
+                        : $"Successfully created {createdTags.Count} wall tags.";
+
                     TaggingResults = new
                     {
                         success = true,
                         totalWalls = walls.Count,
                         taggedWalls = createdTags.Count,
+                        skippedCount = skippedWalls.Count,
                         tags = createdTags,
-                        errors = errors.Count > 0 ? errors : null
+                        skippedWalls = skippedWalls.Count > 0 ? skippedWalls : null,
+                        errors = errors.Count > 0 ? errors : null,
+                        message = resultMessage
                     };
                 }
             }

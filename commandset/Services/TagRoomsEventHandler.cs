@@ -156,7 +156,7 @@ namespace RevitMCPCommandSet.Services
                     }
                 }
 
-                // Get rooms to tag
+                // Get rooms to tag (read-only collectors — no transaction needed)
                 ICollection<Element> rooms;
 
                 if (_roomIds != null && _roomIds.Count > 0)
@@ -208,10 +208,13 @@ namespace RevitMCPCommandSet.Services
 
                     tran.Start();
 
-                    // Find the room tag type
-                    FamilySymbol roomTagType = FindRoomTagType(_doc);
+                    // Refresh room geometry/areas inside the open transaction.
+                    _doc.Regenerate();
 
-                    if (roomTagType == null)
+                    // Resolve target room tag type (honors requested tagTypeId when valid).
+                    ElementId roomTagTypeId = FindRoomTagTypeId(_doc);
+
+                    if (roomTagTypeId == null || roomTagTypeId == ElementId.InvalidElementId)
                     {
                         TaggingResults = new
                         {
@@ -222,13 +225,6 @@ namespace RevitMCPCommandSet.Services
                         return;
                     }
 
-                    // Ensure tag type is active
-                    if (!roomTagType.IsActive)
-                    {
-                        roomTagType.Activate();
-                        _doc.Regenerate();
-                    }
-
                     // Create tags for each room
                     foreach (Element element in rooms)
                     {
@@ -236,7 +232,17 @@ namespace RevitMCPCommandSet.Services
                         if (room == null) continue;
 
                         // Skip unplaced or not enclosed rooms
-                        if (room.Area <= 0) continue;
+                        if (room.Area <= 0)
+                        {
+                            skippedRooms.Add(new
+                            {
+                                roomId = room.Id.GetValue().ToString(),
+                                roomName = room.get_Parameter(BuiltInParameter.ROOM_NAME)?.AsString() ?? "Room",
+                                roomNumber = room.Number,
+                                reason = "Room area is zero (room is unplaced or not enclosed)"
+                            });
+                            continue;
+                        }
 
                         // Skip rooms that already have tags
                         if (roomsWithExistingTags.Contains(room.Id.GetValue()))
@@ -265,7 +271,17 @@ namespace RevitMCPCommandSet.Services
                             {
                                 // Fallback: get center from bounding box
                                 BoundingBoxXYZ bbox = room.get_BoundingBox(activeView);
-                                if (bbox == null) continue;
+                                if (bbox == null)
+                                {
+                                    skippedRooms.Add(new
+                                    {
+                                        roomId = room.Id.GetValue().ToString(),
+                                        roomName = room.get_Parameter(BuiltInParameter.ROOM_NAME)?.AsString() ?? "Room",
+                                        roomNumber = room.Number,
+                                        reason = "Cannot resolve room center point in the active view"
+                                    });
+                                    continue;
+                                }
                                 roomCenter = (bbox.Min + bbox.Max) / 2;
                             }
 
@@ -280,6 +296,9 @@ namespace RevitMCPCommandSet.Services
 
                             if (tag != null)
                             {
+                                if (tag.GetTypeId() != roomTagTypeId)
+                                    tag.ChangeTypeId(roomTagTypeId);
+
                                 // Set leader if requested
                                 if (_useLeader)
                                 {
@@ -367,9 +386,9 @@ namespace RevitMCPCommandSet.Services
         }
 
         /// <summary>
-        /// Find the room tag type in the document
+        /// Resolve room tag type id in the document.
         /// </summary>
-        private FamilySymbol FindRoomTagType(Document doc)
+        private ElementId FindRoomTagTypeId(Document doc)
         {
             // If specific tag type ID was specified, try to use it
             if (!string.IsNullOrEmpty(_tagTypeId) && int.TryParse(_tagTypeId, out int id))
@@ -377,24 +396,25 @@ namespace RevitMCPCommandSet.Services
                 ElementId elementId = new ElementId(id);
                 Element element = doc.GetElement(elementId);
 
-                if (element != null && element is FamilySymbol symbol &&
-                    symbol.Category != null &&
-                    symbol.Category.Id.GetIntValue() == (int)BuiltInCategory.OST_RoomTags)
+                if (element != null &&
+                    element is ElementType &&
+                    element.Category != null &&
+                    element.Category.Id.GetIntValue() == (int)BuiltInCategory.OST_RoomTags)
                 {
-                    return symbol;
+                    return elementId;
                 }
             }
 
             // Find the first available room tag type
             FilteredElementCollector tagCollector = new FilteredElementCollector(doc);
-            FamilySymbol roomTagType = tagCollector.OfClass(typeof(FamilySymbol))
+            ElementType roomTagType = tagCollector.OfClass(typeof(ElementType))
                                                   .WhereElementIsElementType()
                                                   .Where(e => e.Category != null &&
                                                          e.Category.Id.GetIntValue() == (int)BuiltInCategory.OST_RoomTags)
-                                                  .Cast<FamilySymbol>()
+                                                  .Cast<ElementType>()
                                                   .FirstOrDefault();
 
-            return roomTagType;
+            return roomTagType?.Id;
         }
     }
 }
