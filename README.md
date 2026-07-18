@@ -1,13 +1,18 @@
-[![Cover Image](./assets/cover.png?v=2)](https://github.com/mcp-servers-for-revit/mcp-servers-for-revit)
+# mcp-servers-for-revit (hardened fork)
 
-# mcp-servers-for-revit
+**Connect AI assistants to Autodesk Revit via the Model Context Protocol — with a locked-down local attack surface.**
 
-**Connect AI assistants to Autodesk Revit via the Model Context Protocol.**
+This is a fork of [mcp-servers-for-revit](https://github.com/mcp-servers-for-revit/mcp-servers-for-revit). The upstream project lets MCP clients (Claude, Cline, VS Code, ...) read, create, modify, and delete elements in Revit projects. It is powerful by design: its `send_code_to_revit` tool compiles and executes arbitrary C# inside the Revit process, without authentication.
 
-mcp-servers-for-revit enables AI clients like Claude, Cline, and other MCP-compatible tools to read, create, modify, and delete elements in Revit projects. It consists of three components: a TypeScript MCP server that exposes tools to AI, a C# Revit add-in that bridges commands into Revit, and a command set that implements the actual Revit API operations.
+## Why this fork
 
-> [!NOTE]
-> This is a fork of the original [revit-mcp](https://github.com/mcp-servers-for-revit/revit-mcp) project with additional tools and functionality improvements.
+A security review of upstream found no malicious code, but three things worth fixing before running it on a workstation:
+
+1. **Loopback-only socket (security fix).** Upstream binds its TCP listener to *all* network interfaces (`IPAddress.Any:8080`). Combined with unauthenticated code execution, anyone on the same network could run C# inside your Revit session. This fork binds `IPAddress.Loopback`, so only processes on your own machine can connect. Behavior is otherwise unchanged — the MCP server always connects to `localhost`.
+2. **Fully English codebase.** All Chinese comments and user-facing strings (transaction names in Revit's Undo menu, dialogs, log and error messages) are translated, so the code is fully reviewable.
+3. **Environment rules embedded in the tool itself.** The `send_code_to_revit` description now carries the hard-won usage rules (the `document` variable, no `using` directives, transaction modes, Revit 2022+ API changes, the 2-minute timeout, probe-before-apply workflow). Every MCP client receives them at call time instead of relying on a separately loaded skill or prompt.
+
+Plus small cleanups: dead tool files removed, a deploy script added (`scripts/deploy-addin.ps1`).
 
 ## Architecture
 
@@ -20,94 +25,68 @@ flowchart LR
     Revit["Revit API"]
 
     Client <-->|stdio| Server
-    Server <-->|WebSocket| Plugin
+    Server <-->|localhost socket| Plugin
     Plugin -->|loads| CommandSet
     CommandSet -->|executes| Revit
 ```
 
-The **MCP Server** (TypeScript) translates tool calls from AI clients into WebSocket messages. The **Revit Plugin** (C#) runs inside Revit, listens for those messages, and dispatches them to the **Command Set** (C#), which executes the actual Revit API operations and returns results back up the chain.
+The **MCP Server** (TypeScript) translates tool calls from AI clients into JSON-RPC messages over a localhost socket. The **Revit Plugin** (C#) runs inside Revit, listens on `127.0.0.1:8080`, and dispatches commands to the **Command Set** (C#), which executes the actual Revit API operations and returns results back up the chain.
 
 ## Requirements
 
-- **Node.js 18+** (for the MCP server)
-- **Autodesk Revit 2020 - 2026** (any supported version)
+- **Node.js 20+** (for the MCP server)
+- **Autodesk Revit 2020 - 2026**
+- **.NET SDK** with the Visual Studio build tools (to build the plugin)
 
-## Quick Start (Using a Release)
+## Setup
 
-1. Download the ZIP for your Revit version from the [Releases](https://github.com/mcp-servers-for-revit/mcp-servers-for-revit/releases) page (e.g., `mcp-servers-for-revit-v1.0.0-Revit2025.zip`)
+This fork is run from a local build (no npm package).
 
-2. Extract the ZIP and copy the contents to your Revit addins folder:
-   ```
-   %AppData%\Autodesk\Revit\Addins\<your Revit version>\
-   ```
-   After copying you should have:
-   ```
-   Addins/2025/
-   ├── mcp-servers-for-revit.addin
-   └── revit_mcp_plugin/
-       ├── RevitMCPPlugin.dll
-       ├── ...
-       └── Commands/
-           └── RevitMCPCommandSet/
-               ├── command.json
-               └── 2025/
-                   ├── RevitMCPCommandSet.dll
-                   └── ...
-   ```
-
-3. Configure the MCP server in your AI client (see [MCP Server Setup](#mcp-server-setup))
-
-4. Start Revit — if prompted about an unknown add-in, click **Always Load**
-
-5. In Revit, click the **Settings** button on the mcp-servers-for-revit ribbon tab, enable the commands you want to use, and click **Save**
-
-## MCP Server Setup
-
-The MCP server is published as an npm package and can be run directly with `npx`.
-
-**Claude Code**
-
-Run this in a **terminal** (not inside Claude Code):
+### 1. Build the MCP server
 
 ```bash
-claude mcp add mcp-server-for-revit -- cmd /c npx -y mcp-server-for-revit
+cd server
+npm install
+npm run build
 ```
 
-**Claude Desktop**
+### 2. Build and deploy the Revit plugin
 
-Claude Desktop → Settings → Developer → Edit Config → `claude_desktop_config.json`:
+```bash
+dotnet build plugin/RevitMCPPlugin.csproj -c "Release R25"      # Revit 2025
+dotnet build commandset/RevitMCPCommandSet.csproj -c "Release R25"
+```
+
+(Use `Release R26` for Revit 2026, `Release R20`-`R24` for older versions on .NET Framework 4.8.)
+
+Then, with Revit closed:
+
+```powershell
+./scripts/deploy-addin.ps1
+```
+
+This copies the built add-in into `C:\ProgramData\Autodesk\Revit\Addins\<year>\` and removes any stale manifests.
+
+### 3. Register the server with your MCP client
+
+Point the client at the built server with plain `node`. For Claude Code (`~/.claude.json` or `claude mcp add`):
 
 ```json
 {
     "mcpServers": {
         "mcp-server-for-revit": {
-            "command": "cmd",
-            "args": ["/c", "npx", "-y", "mcp-server-for-revit"]
+            "command": "node",
+            "args": ["C:\\path\\to\\revit-mcp-fork\\server\\build\\index.js"]
         }
     }
 }
 ```
 
-Restart Claude Desktop. When you see the hammer icon, the MCP server is connected.
+### 4. Start Revit
 
-![Claude Desktop connection](./assets/claude.png)
+If prompted about an unknown add-in, click **Always Load**. Then open **Settings** on the mcp-servers-for-revit ribbon tab, enable the commands you want, and click **Save**.
 
-## Revit Plugin Setup
-
-If using a release ZIP, the plugin is already included. For manual installation:
-
-1. Build the plugin from `plugin/` (see [Development](#development))
-2. Copy `mcp-servers-for-revit.addin` to `%AppData%\Autodesk\Revit\Addins\<version>\`
-3. Copy the `revit_mcp_plugin/` folder to the same addins directory
-
-## Command Set Setup
-
-If using a release ZIP, the command set is pre-installed inside the plugin. For manual installation:
-
-1. Build the command set from `commandset/` (see [Development](#development))
-2. Inside the plugin's installation directory, create `Commands/RevitMCPCommandSet/<year>/`
-3. Copy the built DLLs into that folder
-4. Copy `command.json` (from repo root) into `Commands/RevitMCPCommandSet/`
+To verify the security fix: `netstat -ano | findstr :8080` should show the listener on `127.0.0.1:8080`, not `0.0.0.0:8080`.
 
 ## Supported Tools
 
@@ -137,155 +116,41 @@ If using a release ZIP, the command set is pre-installed inside the plugin. For 
 | `store_project_data` | Store project metadata in local database |
 | `store_room_data` | Store room metadata in local database |
 | `query_stored_data` | Query stored project and room data |
-| `send_code_to_revit` | Send C# code to Revit to execute |
+| `send_code_to_revit` | Execute a C# snippet in Revit (rules embedded in the tool description; supports `transactionMode: "auto" \| "none"`) |
 | `say_hello` | Display a greeting dialog in Revit (connection test) |
+
+## Security notes
+
+- The plugin listens on loopback only; there is no authentication on the JSON-RPC channel, so any local process can drive Revit while the service is enabled. That is acceptable for a single-user workstation — do not port-forward or re-bind it.
+- `send_code_to_revit` is arbitrary code execution *by design*. The only gate is which MCP client you connect and how it asks for approval.
+- The npm dependency surface is four packages (`@modelcontextprotocol/sdk`, `better-sqlite3`, `ws`, `zod`); there are no install scripts and no outbound network calls anywhere in the codebase.
 
 ## Testing
 
-The test project uses [Nice3point.TUnit.Revit](https://github.com/Nice3point/RevitUnit) to run integration tests against a live Revit instance. No separate addin installation is required — the framework injects into the running Revit process automatically.
-
-### Prerequisites
-
-- **.NET 10 SDK** — required by Nice3point.Revit.Sdk 6.1.0. Install via `winget install Microsoft.DotNet.SDK.10`
-- **Autodesk Revit 2026** (or 2025) — must be installed and licensed on your machine
-
-### Running Tests
-
-1. Open Revit 2026 (or 2025) and wait for it to fully load
-2. Run the tests from the command line:
+The test project (`tests/commandset`) uses [Nice3point.TUnit.Revit](https://github.com/Nice3point/RevitUnit) to run integration tests against a live Revit instance. It requires the **.NET 10 SDK** and a licensed Revit 2025/2026. With Revit open:
 
 ```bash
-# For Revit 2026
 dotnet test -c Debug.R26 -r win-x64 tests/commandset
-
-# For Revit 2025
-dotnet test -c Debug.R25 -r win-x64 tests/commandset
 ```
-
-> **Note:** The `-r win-x64` flag is required on ARM64 machines because the Revit API assemblies are x64-only.
-
-Alternatively, you can use `dotnet run`:
-
-```bash
-cd tests/commandset
-dotnet run -c Debug.R26
-```
-
-### IDE Support
-
-- **JetBrains Rider** — enable "Testing Platform support" in Settings > Build, Execution, Deployment > Unit Testing > Testing Platform
-- **Visual Studio** — tests should be discoverable through the standard Test Explorer
-
-### Test Structure
-
-| Directory | Purpose |
-|-----------|---------|
-| `tests/commandset/AssemblyInfo.cs` | Global `[assembly: TestExecutor<RevitThreadExecutor>]` registration |
-| `tests/commandset/Architecture/` | Tests for level and room creation commands |
-| `tests/commandset/DataExtraction/` | Tests for model statistics, room data export, and material quantities |
-| `tests/commandset/ColorSplashTests.cs` | Tests for color override functionality |
-| `tests/commandset/TagRoomsTests.cs` | Tests for room tagging functionality |
-
-### Writing New Tests
-
-Test classes inherit from `RevitApiTest` and use TUnit's async assertion API:
-
-```csharp
-public class MyTests : RevitApiTest
-{
-    private static Document _doc;
-
-    [Before(HookType.Class)]
-    [HookExecutor<RevitThreadExecutor>]
-    public static void Setup()
-    {
-        _doc = Application.NewProjectDocument(UnitSystem.Imperial);
-    }
-
-    [After(HookType.Class)]
-    [HookExecutor<RevitThreadExecutor>]
-    public static void Cleanup()
-    {
-        _doc?.Close(false);
-    }
-
-    [Test]
-    public async Task MyTest_Condition_ExpectedResult()
-    {
-        var elements = new FilteredElementCollector(_doc)
-            .WhereElementIsNotElementType()
-            .ToElements();
-
-        await Assert.That(elements.Count).IsGreaterThan(0);
-    }
-}
-```
-
-## Development
-
-### MCP Server
-
-```bash
-cd server
-npm install
-npm run build
-```
-
-The server compiles TypeScript to `server/build/`. During development you can run it directly with `npx tsx server/src/index.ts`.
-
-### Revit Plugin + Command Set
-
-Open `mcp-servers-for-revit.sln` in Visual Studio. The solution contains both the plugin and command set projects. Build configurations target Revit 2020-2026:
-
-- **Revit 2020-2024**: .NET Framework 4.8 (`Release R20` through `Release R24`)
-- **Revit 2025-2026**: .NET 8 (`Release R25`, `Release R26`)
-
-Building the solution automatically assembles the complete deployable layout in `plugin/bin/AddIn <year> <config>/` - the command set is copied into the plugin's `Commands/` folder as part of the build.
 
 ## Project Structure
 
 ```
-mcp-servers-for-revit/
+revit-mcp-fork/
 ├── mcp-servers-for-revit.sln    # Combined solution (plugin + commandset + tests)
 ├── command.json     # Command set manifest
 ├── server/          # MCP server (TypeScript) - tools exposed to AI clients
-├── plugin/          # Revit add-in (C#) - WebSocket bridge inside Revit
+├── plugin/          # Revit add-in (C#) - localhost socket bridge inside Revit
 ├── commandset/      # Command implementations (C#) - Revit API operations
 ├── tests/           # Integration tests (C#) - TUnit tests against live Revit
-├── assets/          # Images for documentation
-├── .github/         # CI/CD workflows, contributing guide, code of conduct
-├── LICENSE
-└── README.md
+└── scripts/         # deploy-addin.ps1, release.ps1
 ```
 
-## Releasing
+## Syncing with upstream
 
-A single `v*` tag drives the entire release. The [release workflow](.github/workflows/release.yml) automatically:
+This fork carries three local changes on top of upstream: the loopback-only listener (`plugin/Core/SocketService.cs`), the English translation, and the enriched `send_code_to_revit` description (`server/src/tools/send_code_to_revit.ts`).
 
-- Builds the Revit plugin + command set for Revit 2020-2026
-- Creates a GitHub release with `mcp-servers-for-revit-vX.Y.Z-Revit<year>.zip` assets
-- Publishes the MCP server to npm as [`mcp-server-for-revit`](https://www.npmjs.com/package/mcp-server-for-revit)
-
-To create a release:
-
-1. Run the bump script (updates `server/package.json`, `server/package-lock.json`, and `plugin/Properties/AssemblyInfo.cs`, then commits and tags):
-   ```powershell
-   ./scripts/release.ps1 -Version X.Y.Z
-   ```
-
-2. Push to trigger the workflow:
-   ```bash
-   git push origin main --tags
-   ```
-
-> [!NOTE]
-> npm publish uses [trusted publishing](https://docs.npmjs.com/trusted-publishers/) via OIDC — no npm token is required. Provenance attestation is generated automatically.
-
-## Syncing this fork with upstream
-
-This fork (Stibbz/mcp-servers-for-revit) carries three local changes on top of upstream: the socket listener binds to loopback only (`plugin/Core/SocketService.cs`), all comments and strings are English, and the `send_code_to_revit` tool description embeds the environment rules (`server/src/tools/send_code_to_revit.ts`).
-
-Sync monthly:
+Sync periodically:
 
 ```bash
 git fetch upstream
@@ -296,13 +161,7 @@ Expected conflict surface: `send_code_to_revit.ts` (description block), `SocketS
 
 ## Acknowledgements
 
-This project is a fork of the work by the [mcp-servers-for-revit](https://github.com/mcp-servers-for-revit) team. The original repositories:
-
-- [revit-mcp](https://github.com/mcp-servers-for-revit/revit-mcp) - MCP server
-- [revit-mcp-plugin](https://github.com/mcp-servers-for-revit/revit-mcp-plugin) - Revit plugin
-- [revit-mcp-commandset](https://github.com/mcp-servers-for-revit/revit-mcp-commandset) - Command set
-
-Thank you to the original authors for creating the foundation that this project builds upon.
+Forked from [mcp-servers-for-revit](https://github.com/mcp-servers-for-revit/mcp-servers-for-revit), itself a continuation of [revit-mcp](https://github.com/mcp-servers-for-revit/revit-mcp), [revit-mcp-plugin](https://github.com/mcp-servers-for-revit/revit-mcp-plugin), and [revit-mcp-commandset](https://github.com/mcp-servers-for-revit/revit-mcp-commandset). Thanks to the original authors for the foundation this builds on.
 
 ## License
 
