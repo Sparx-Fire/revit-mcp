@@ -281,6 +281,19 @@ To create a release:
 > [!NOTE]
 > npm publish uses [trusted publishing](https://docs.npmjs.com/trusted-publishers/) via OIDC — no npm token is required. Provenance attestation is generated automatically.
 
+## Syncing this fork with upstream
+
+This fork (Stibbz/mcp-servers-for-revit) carries three local changes on top of upstream: the socket listener binds to loopback only (`plugin/Core/SocketService.cs`), all comments and strings are English, and the `send_code_to_revit` tool description embeds the environment rules (`server/src/tools/send_code_to_revit.ts`).
+
+Sync monthly:
+
+```bash
+git fetch upstream
+git merge upstream/main
+```
+
+Expected conflict surface: `send_code_to_revit.ts` (description block), `SocketService.cs` (one line), and any upstream file that still had Chinese comments. After merging, rebuild the server (`npm run build` in `server/`) and redeploy the plugin (`scripts/deploy-addin.ps1` with Revit closed).
+
 ## Acknowledgements
 
 This project is a fork of the work by the [mcp-servers-for-revit](https://github.com/mcp-servers-for-revit) team. The original repositories:
