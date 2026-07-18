@@ -102,7 +102,7 @@ namespace revit_mcp_plugin.Core
             try
             {
                 _isRunning = true;
-                _listener = new TcpListener(IPAddress.Any, _port);
+                _listener = new TcpListener(IPAddress.Loopback, _port);
                 _listener.Start();
 
                 _listenerThread = new Thread(ListenForClients)
