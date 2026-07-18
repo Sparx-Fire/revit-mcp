@@ -1,10 +1,9 @@
-﻿using System.Windows;
+using System.Windows;
 using System.Windows.Controls;
 
 namespace revit_mcp_plugin.UI
 {
     /// <summary>
-    /// Settings.xaml 的交互逻辑
     /// </summary>
     public partial class SettingsWindow : Window
     {
@@ -15,10 +14,10 @@ namespace revit_mcp_plugin.UI
         {
             InitializeComponent();
 
-            // 初始化页面
+            // Initialize the page
             commandSetPage = new CommandSetSettingsPage();
 
-            // 加载默认页面
+            // Load the default page
             ContentFrame.Navigate(commandSetPage);
 
             isInitialized = true;
