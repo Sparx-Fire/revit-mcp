@@ -17,6 +17,76 @@ namespace RevitMCPCommandSet.Commands.ExecuteDynamicCode
         public const string TransactionModeAuto = "auto";
         public const string TransactionModeNone = "none";
 
+        // 静态构造函数：注册程序集解析器以处理依赖加载问题
+        static ExecuteCodeEventHandler()
+        {
+            // 只注册一次
+            if (!_assemblyResolverRegistered)
+            {
+                AppDomain.CurrentDomain.AssemblyResolve += OnAssemblyResolve;
+                _assemblyResolverRegistered = true;
+            }
+        }
+
+        private static bool _assemblyResolverRegistered = false;
+
+        /// <summary>
+        /// 程序集解析器：处理 Roslyn 及其依赖项的加载
+        /// </summary>
+        private static Assembly OnAssemblyResolve(object sender, ResolveEventArgs args)
+        {
+            // 只处理我们关心的程序集
+            var assemblyName = new AssemblyName(args.Name);
+
+            // 处理 System.Runtime.CompilerServices.Unsafe 及其他 Roslyn 依赖
+            var targetAssemblies = new[]
+            {
+                "System.Runtime.CompilerServices.Unsafe",
+                "System.Memory",
+                "System.Buffers",
+                "System.Threading.Tasks.Extensions",
+                "System.Collections.Immutable",
+                "Microsoft.CodeAnalysis",
+                "Microsoft.CodeAnalysis.CSharp"
+            };
+
+            if (!targetAssemblies.Contains(assemblyName.Name))
+            {
+                return null;
+            }
+
+            // 尝试从已加载的程序集中查找
+            var loadedAssembly = AppDomain.CurrentDomain.GetAssemblies()
+                .FirstOrDefault(a => a.GetName().Name == assemblyName.Name);
+
+            if (loadedAssembly != null)
+            {
+                return loadedAssembly;
+            }
+
+            // 尝试从插件目录加载
+            try
+            {
+                var pluginDir = Path.GetDirectoryName(typeof(ExecuteCodeEventHandler).Assembly.Location);
+                if (!string.IsNullOrEmpty(pluginDir))
+                {
+                    // 尝试不同版本的 DLL 文件
+                    var possibleFiles = Directory.GetFiles(pluginDir, $"{assemblyName.Name}*.dll", SearchOption.TopDirectoryOnly);
+
+                    if (possibleFiles.Length > 0)
+                    {
+                        return Assembly.LoadFrom(possibleFiles[0]);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to load assembly {assemblyName.Name}: {ex.Message}");
+            }
+
+            return null;
+        }
+
         // 代码执行参数
         private string _generatedCode;
         private object[] _executionParameters;
