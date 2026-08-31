@@ -1,0 +1,46 @@
+<Solution>
+  <Configurations>
+    <BuildType Name="Debug R20" />
+    <BuildType Name="Debug R21" />
+    <BuildType Name="Debug R22" />
+    <BuildType Name="Debug R23" />
+    <BuildType Name="Debug R24" />
+    <BuildType Name="Debug R25" />
+    <BuildType Name="Debug R26" />
+    <BuildType Name="Release R20" />
+    <BuildType Name="Release R21" />
+    <BuildType Name="Release R22" />
+    <BuildType Name="Release R23" />
+    <BuildType Name="Release R24" />
+    <BuildType Name="Release R25" />
+    <BuildType Name="Release R26" />
+  </Configurations>
+  <Project Path="commandset/RevitMCPCommandSet.csproj" />
+  <Project Path="plugin/RevitMCPPlugin.csproj" />
+  <Project Path="tests/commandset/RevitMCPCommandSet.Tests.csproj">
+    <BuildType Solution="Debug R20|*" Project="Debug.R26" />
+    <BuildType Solution="Debug R21|*" Project="Debug.R26" />
+    <BuildType Solution="Debug R22|*" Project="Debug.R26" />
+    <BuildType Solution="Debug R23|*" Project="Debug.R26" />
+    <BuildType Solution="Debug R24|*" Project="Debug.R26" />
+    <BuildType Solution="Debug R25|*" Project="Debug.R25" />
+    <BuildType Solution="Debug R26|*" Project="Debug.R26" />
+    <BuildType Solution="Release R20|*" Project="Release.R26" />
+    <BuildType Solution="Release R21|*" Project="Release.R26" />
+    <BuildType Solution="Release R22|*" Project="Release.R26" />
+    <BuildType Solution="Release R23|*" Project="Release.R26" />
+    <BuildType Solution="Release R24|*" Project="Release.R26" />
+    <BuildType Solution="Release R25|*" Project="Release.R25" />
+    <BuildType Solution="Release R26|*" Project="Release.R26" />
+    <Build Solution="Debug R20|*" Project="false" />
+    <Build Solution="Debug R21|*" Project="false" />
+    <Build Solution="Debug R22|*" Project="false" />
+    <Build Solution="Debug R23|*" Project="false" />
+    <Build Solution="Debug R24|*" Project="false" />
+    <Build Solution="Release R20|*" Project="false" />
+    <Build Solution="Release R21|*" Project="false" />
+    <Build Solution="Release R22|*" Project="false" />
+    <Build Solution="Release R23|*" Project="false" />
+    <Build Solution="Release R24|*" Project="false" />
+  </Project>
+</Solution>

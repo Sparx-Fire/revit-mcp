@@ -56,11 +56,19 @@
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="Microsoft.CSharp" Version="4.7.0"/>
-        <PackageReference Include="Nice3point.Revit.Api.RevitAPI" Version="$(RevitVersion).*"/>
-        <PackageReference Include="Nice3point.Revit.Api.RevitAPIUI" Version="$(RevitVersion).*"/>
-        <PackageReference Include="RevitMCPSDK" Version="$(RevitVersion).*"/>
+        <PackageReference Include="Nice3point.Revit.Api.RevitAPI" Version="2026.0.*" Condition="$(RevitVersion) == '2026'"/>
+        <PackageReference Include="Nice3point.Revit.Api.RevitAPIUI" Version="2026.0.*" Condition="$(RevitVersion) == '2026'"/>
+        <PackageReference Include="RevitMCPSDK" Version="2026.0.*" Condition="$(RevitVersion) == '2026'"/>
+        <PackageReference Include="Nice3point.Revit.Api.RevitAPI" Version="$(RevitVersion).*" Condition="$(RevitVersion) != '2026'"/>
+        <PackageReference Include="Nice3point.Revit.Api.RevitAPIUI" Version="$(RevitVersion).*" Condition="$(RevitVersion) != '2026'"/>
+        <PackageReference Include="RevitMCPSDK" Version="$(RevitVersion).*" Condition="$(RevitVersion) != '2026'"/>
         <PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0"/>
     </ItemGroup>
+
+    <!-- Suppress NU1605: pin RevitAPI to 2026.0.4 to match local Revit 2026 (26.0.4.409) -->
+    <PropertyGroup>
+        <NoWarn>$(NoWarn);NU1605;NU1608</NoWarn>
+    </PropertyGroup>
     <ItemGroup>
         <Resource Include="Core\Ressources\icon-16.png"/>
         <Resource Include="Core\Ressources\icon-32.png"/>

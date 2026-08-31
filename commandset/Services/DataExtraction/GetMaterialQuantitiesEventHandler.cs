@@ -1,5 +1,3 @@
-using Autodesk.Revit.DB;
-using Autodesk.Revit.UI;
 using RevitMCPCommandSet.Models.DataExtraction;
 using RevitMCPSDK.API.Interfaces;
 
@@ -87,11 +85,7 @@ namespace RevitMCPCommandSet.Services.DataExtraction
                         {
                             materialData[matId] = new MaterialQuantityModel
                             {
-#if REVIT2024_OR_GREATER
-                                MaterialId = matId.Value,
-#else
-                                MaterialId = matId.IntegerValue,
-#endif
+                                MaterialId = matId.GetValue(),
                                 MaterialName = material.Name,
                                 MaterialClass = material.MaterialClass
                             };
@@ -104,15 +98,9 @@ namespace RevitMCPCommandSet.Services.DataExtraction
                         materialData[matId].Area += area;
                         materialData[matId].Volume += volume;
 
-#if REVIT2024_OR_GREATER
-                        if (!materialData[matId].ElementIds.Contains(element.Id.Value))
+                        if (!materialData[matId].ElementIds.Contains(element.Id.GetValue()))
                         {
-                            materialData[matId].ElementIds.Add(element.Id.Value);
-#else
-                        if (!materialData[matId].ElementIds.Contains(element.Id.IntegerValue))
-                        {
-                            materialData[matId].ElementIds.Add(element.Id.IntegerValue);
-#endif
+                            materialData[matId].ElementIds.Add(element.Id.GetValue());
                             materialData[matId].ElementCount++;
                         }
                     }

@@ -35,7 +35,7 @@ public class ModelCurveCreationInfo
     /// </summary>
     public ModelCurveCreationInfo()
     {
-        Points = new List<Point>();
+        Points = new List<JZPoint>();
         Parameters = new Dictionary<string, object>();
     }
 
@@ -49,13 +49,13 @@ public class ModelCurveCreationInfo
     ///     Points defining the curve geometry
     /// </summary>
     [JsonProperty("points")]
-    public List<Point> Points { get; set; }
+    public List<JZPoint> Points { get; set; }
 
     /// <summary>
     ///     Center point for circle, arc, ellipse
     /// </summary>
     [JsonProperty("center")]
-    public Point Center { get; set; }
+    public JZPoint Center { get; set; }
 
     /// <summary>
     ///     Radius for circle or arc in millimeters
@@ -97,7 +97,7 @@ public class ModelCurveCreationInfo
     ///     Normal vector for curve plane
     /// </summary>
     [JsonProperty("normal")]
-    public Point Normal { get; set; }
+    public JZPoint Normal { get; set; }
 
     /// <summary>
     ///     Sketch plane ID for curve

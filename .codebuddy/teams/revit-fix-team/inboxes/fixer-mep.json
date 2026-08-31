@@ -1,0 +1,20 @@
+[
+  {
+    "id": "msg-1787887839670-dyfm4t",
+    "from": "team-lead",
+    "to": "fixer-mep",
+    "type": "message",
+    "content": "How is the progress? Please report which files you've fixed so far.",
+    "timestamp": "2026-08-28T03:30:39.670Z",
+    "read": true
+  },
+  {
+    "id": "msg-1787887852150-bz1u06",
+    "from": "team-lead",
+    "to": "fixer-mep",
+    "type": "message",
+    "content": "Please send me a status update on what you've completed so far.",
+    "timestamp": "2026-08-28T03:30:52.150Z",
+    "read": true
+  }
+]

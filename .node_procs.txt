@@ -1,0 +1,10 @@
+﻿27992: C:\Users\zhouht\AppData\Local\CadCommandBridge\2024\runtime\node.exe C:\Users\zhouht\AppData\Local\CadCommandBridge\2024\scripts\cad-mcp-server.mjs
+40104: node C:\Users\zhouht\.workbuddy\plugins\cache\workbuddy-builtin\sheetagent\0.1.1787966564/mcp/start.mjs
+16648: "C:\Users\zhouht\.workbuddy\binaries\node\versions\22.22.2-2\node.exe"  "C:\Users\zhouht\.workbuddy\plugins\cache\workbuddy-builtin\weixinpay\1.6.107/dist/mcp-server.mjs"
+57764: "C:\Program Files\nodejs\node.exe" C:\Users\zhouht\AppData\Roaming\npm/node_modules/pnpm/bin/pnpm.mjs dsh web
+25092: node   "E:\.pnpm-store\v11\links\@\pnpm\11.7.0\13310dfb63588666a20ffbb7892eca80e4978178e90910f66079c792a7b2dc4f\bin\\..\node_modules\pnpm\bin\pnpm.mjs" "dsh" "web"
+41780: node  --import tsx/esm apps/cli/src/bin.ts "web"
+69696: C:/Users/zhouht/AppData/Roaming/Autodesk/Revit/Addins/2026/revit_mcp_plugin/runtime/node.exe C:/Users/zhouht/AppData/Roaming/Autodesk/Revit/Addins/2026/revit_mcp_plugin/runtime/build/index.js
+34872: C:/Users/zhouht/AppData/Roaming/Autodesk/Revit/Addins/2026/revit_mcp_plugin/runtime/node.exe C:/Users/zhouht/AppData/Roaming/Autodesk/Revit/Addins/2026/revit_mcp_plugin/runtime/build/index.js
+67244: "C:\Program Files\nodejs\node.exe" --import tsx/esm E:\WORKSPACE\CODE_JS\deepseek-harness\apps\cli\src\bin.ts plugin --profile web add -w github:liangmianya/dsh-synapse --reporter=ndjson
+16188: node   "E:\.pnpm-store\v11\links\@\pnpm\11.7.0\13310dfb63588666a20ffbb7892eca80e4978178e90910f66079c792a7b2dc4f\bin\\..\node_modules\pnpm\bin\pnpm.mjs" add -w github:liangmianya/dsh-synapse --reporter=ndjson

@@ -1,4 +1,3 @@
-using Autodesk.Revit.UI;
 using RevitMCPCommandSet.Models.Common;
 using RevitMCPSDK.API.Interfaces;
 
@@ -30,11 +29,7 @@ namespace RevitMCPCommandSet.Services
 
                 ResultInfo = new CurrentViewInfo
                 {
-#if REVIT2024_OR_GREATER
-                    Id = (int)activeView.Id.Value,
-#else
-                    Id = activeView.Id.IntegerValue,
-#endif
+                    Id = activeView.Id.GetIntValue(),
                     UniqueId = activeView.UniqueId,
                     Name = activeView.Name,
                     ViewType = activeView.ViewType.ToString(),

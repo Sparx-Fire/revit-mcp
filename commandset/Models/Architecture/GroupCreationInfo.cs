@@ -66,7 +66,7 @@ public class GroupInstanceInfo
     ///     Insertion point for the group (millimeters)
     /// </summary>
     [JsonProperty("insertionPoint")]
-    public Point InsertionPoint { get; set; }
+    public JZPoint InsertionPoint { get; set; }
 
     /// <summary>
     ///     Rotation angle in degrees

@@ -1,0 +1,20 @@
+[
+  {
+    "id": "msg-1787887838663-gc06br",
+    "from": "team-lead",
+    "to": "fixer-views",
+    "type": "message",
+    "content": "How is the progress? Please report which files you've fixed so far.",
+    "timestamp": "2026-08-28T03:30:38.663Z",
+    "read": true
+  },
+  {
+    "id": "msg-1787887851185-nyzmd0",
+    "from": "team-lead",
+    "to": "fixer-views",
+    "type": "message",
+    "content": "Please send me a status update on what you've completed so far.",
+    "timestamp": "2026-08-28T03:30:51.185Z",
+    "read": true
+  }
+]

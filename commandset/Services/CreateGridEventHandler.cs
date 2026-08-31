@@ -1,7 +1,4 @@
-using Autodesk.Revit.DB;
-using Autodesk.Revit.UI;
 using RevitMCPCommandSet.Models.Architecture;
-using RevitMCPCommandSet.Models.Common;
 using RevitMCPSDK.API.Interfaces;
 
 namespace RevitMCPCommandSet.Services
@@ -106,11 +103,7 @@ namespace RevitMCPCommandSet.Services
                         Grid grid = Grid.Create(doc, gridLine);
                         grid.Name = uniqueLabel;
 
-#if REVIT2024_OR_GREATER
-                        long gridId = grid.Id.Value;
-#else
-                        long gridId = grid.Id.IntegerValue;
-#endif
+                        long gridId = grid.Id.GetValue();
 
                         createdGrids.Add(new GridCreationResult
                         {
@@ -162,11 +155,7 @@ namespace RevitMCPCommandSet.Services
                         Grid grid = Grid.Create(doc, gridLine);
                         grid.Name = uniqueLabel;
 
-#if REVIT2024_OR_GREATER
-                        long gridId = grid.Id.Value;
-#else
-                        long gridId = grid.Id.IntegerValue;
-#endif
+                        long gridId = grid.Id.GetValue();
 
                         createdGrids.Add(new GridCreationResult
                         {

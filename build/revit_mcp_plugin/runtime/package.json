@@ -1,0 +1,57 @@
+{
+    "name": "mcp-server-for-revit",
+    "version": "1.0.0",
+    "description": "MCP server for interacting with Autodesk Revit through AI assistants like Claude",
+    "main": "index.js",
+    "type": "module",
+    "bin": {
+        "mcp-server-for-revit": "./build/index.js"
+    },
+    "engines": {
+        "node": ">=20.0.0"
+    },
+    "scripts": {
+        "clean": "rimraf build",
+        "prebuild": "npm run clean",
+        "build": "tsc",
+        "prepublishOnly": "npm run build"
+    },
+    "files": [
+        "build",
+        "README.md"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/mcp-servers-for-revit/mcp-servers-for-revit.git"
+    },
+    "keywords": [
+        "mcp",
+        "revit",
+        "autodesk",
+        "claude",
+        "ai",
+        "bim",
+        "architecture"
+    ],
+    "license": "MIT",
+    "publishConfig": {
+        "access": "public"
+    },
+    "bugs": {
+        "url": "https://github.com/mcp-servers-for-revit/mcp-servers-for-revit/issues"
+    },
+    "homepage": "https://github.com/mcp-servers-for-revit/mcp-servers-for-revit#readme",
+    "dependencies": {
+        "@modelcontextprotocol/sdk": "^1.7.0",
+        "better-sqlite3": "^12.8.0",
+        "ws": "^8.18.1",
+        "zod": "^3.24.2"
+    },
+    "devDependencies": {
+        "@types/better-sqlite3": "^7.6.13",
+        "@types/node": "^22.13.10",
+        "@types/ws": "^8.18.0",
+        "rimraf": "^5.0.10",
+        "typescript": "^5.8.2"
+    }
+}

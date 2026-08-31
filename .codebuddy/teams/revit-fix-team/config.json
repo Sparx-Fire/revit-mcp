@@ -1,0 +1,33 @@
+{
+  "name": "revit-fix-team",
+  "leadAgentId": "2fba09636aed4163bac50ab942e0187e",
+  "workspacePath": "e:/WORKSPACE/CODE_REVIT/mcp-servers-for-revit",
+  "createdAt": "2026-08-28T03:29:55.425Z",
+  "options": {
+    "workspacePath": "e:/WORKSPACE/CODE_REVIT/mcp-servers-for-revit",
+    "isAutoTeam": false
+  },
+  "members": [
+    {
+      "memberId": "team-lead@revit-fix-team",
+      "name": "team-lead",
+      "role": "Team Lead - coordinates the team and interacts with the user"
+    },
+    {
+      "memberId": "fixer-views@revit-fix-team",
+      "name": "fixer-views",
+      "role": "Fix View files R20 errors"
+    },
+    {
+      "memberId": "fixer-mep@revit-fix-team",
+      "name": "fixer-mep",
+      "role": "Fix MEP files R20 errors"
+    },
+    {
+      "memberId": "fixer-arch@revit-fix-team",
+      "name": "fixer-arch",
+      "role": "Fix Arch/Modify/Query files"
+    }
+  ],
+  "isAutoTeam": false
+}

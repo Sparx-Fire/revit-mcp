@@ -1,4 +1,3 @@
-using Autodesk.Revit.UI;
 using RevitMCPSDK.API.Interfaces;
 
 namespace RevitMCPCommandSet.Services
@@ -147,8 +146,8 @@ try
                                 {
                                     createdTags.Add(new
                                     {
-                                        id = tag.Id.IntegerValue.ToString(),
-                                        wallId = wall.Id.IntegerValue.ToString(),
+                                        id = tag.Id.GetIntValue().ToString(),
+                                        wallId = wall.Id.GetIntValue().ToString(),
 
                                         wallName = wall.Name,
                                         location = new
@@ -163,7 +162,7 @@ try
                         }
                         catch (Exception ex)
                         {
-                            errors.Add($"标记墙体 {wall.Id.IntegerValue} 出错: {ex.Message}");
+                            errors.Add($"标记墙体 {wall.Id.GetIntValue()} 出错: {ex.Message}");
                         }
 #endif
                     }
@@ -219,8 +218,6 @@ try
         /// </summary>
         private FamilySymbol FindWallTagType(Document doc)
         {
-#if REVIT2024_OR_GREATER
-            // If specific tag type ID was specified, try to use it
             if (!string.IsNullOrEmpty(_tagTypeId))
             {
                 if (int.TryParse(_tagTypeId, out int id))
@@ -229,76 +226,33 @@ try
                     Element element = doc.GetElement(elementId);
 
                     if (element != null && element is FamilySymbol symbol &&
-                        (symbol.Category.Id.Value == (int)BuiltInCategory.OST_WallTags ||
-                         symbol.Category.Id.Value == (int)BuiltInCategory.OST_MultiCategoryTags))
+                        (symbol.Category.Id.GetIntValue() == (int)BuiltInCategory.OST_WallTags ||
+                         symbol.Category.Id.GetIntValue() == (int)BuiltInCategory.OST_MultiCategoryTags))
                     {
                         return symbol;
                     }
                 }
             }
 
-            // First try to find a tag specifically for walls
             FilteredElementCollector tagCollector = new FilteredElementCollector(doc);
             FamilySymbol wallTagType = tagCollector.OfClass(typeof(FamilySymbol))
                                                   .WhereElementIsElementType()
                                                   .Where(e => e.Category != null &&
-                                                         e.Category.Id.Value == (int)BuiltInCategory.OST_WallTags)
+                                                         e.Category.Id.GetIntValue() == (int)BuiltInCategory.OST_WallTags)
                                                   .Cast<FamilySymbol>()
                                                   .FirstOrDefault();
 
-            // If no wall tag found, try to find a multi-category tag that can tag walls
             if (wallTagType == null)
             {
                 wallTagType = tagCollector.OfClass(typeof(FamilySymbol))
                                          .WhereElementIsElementType()
                                          .Where(e => e.Category != null &&
-                                                e.Category.Id.Value == (int)BuiltInCategory.OST_MultiCategoryTags)
+                                                e.Category.Id.GetIntValue() == (int)BuiltInCategory.OST_MultiCategoryTags)
                                          .Cast<FamilySymbol>()
                                          .FirstOrDefault();
             }
 
             return wallTagType;
-#else
-            // If specific tag type ID was specified, try to use it
-            if (!string.IsNullOrEmpty(_tagTypeId))
-            {
-                if (int.TryParse(_tagTypeId, out int id))
-                {
-                    ElementId elementId = new ElementId(id);
-                    Element element = doc.GetElement(elementId);
-
-                    if (element != null && element is FamilySymbol symbol &&
-                        (symbol.Category.Id.IntegerValue == (int)BuiltInCategory.OST_WallTags ||
-                         symbol.Category.Id.IntegerValue == (int)BuiltInCategory.OST_MultiCategoryTags))
-                    {
-                        return symbol;
-                    }
-                }
-            }
-
-            // First try to find a tag specifically for walls
-            FilteredElementCollector tagCollector = new FilteredElementCollector(doc);
-            FamilySymbol wallTagType = tagCollector.OfClass(typeof(FamilySymbol))
-                                                  .WhereElementIsElementType()
-                                                  .Where(e => e.Category != null &&
-                                                         e.Category.Id.IntegerValue == (int)BuiltInCategory.OST_WallTags)
-                                                  .Cast<FamilySymbol>()
-                                                  .FirstOrDefault();
-
-            // If no wall tag found, try to find a multi-category tag that can tag walls
-            if (wallTagType == null)
-            {
-                wallTagType = tagCollector.OfClass(typeof(FamilySymbol))
-                                         .WhereElementIsElementType()
-                                         .Where(e => e.Category != null &&
-                                                e.Category.Id.IntegerValue == (int)BuiltInCategory.OST_MultiCategoryTags)
-                                         .Cast<FamilySymbol>()
-                                         .FirstOrDefault();
-            }
-
-            return wallTagType;
-#endif
-
         }
     }
 }

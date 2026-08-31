@@ -32,36 +32,31 @@ Claude Desktop → Settings → Developer → Edit Config → `claude_desktop_co
 
 Restart Claude Desktop. When you see the hammer icon, the MCP server is connected.
 
-## Supported Tools
+## Supported Tools (90 total)
+
+This server exposes **84 Revit commands** + **6 utility tools**. See the [main project README](https://github.com/mcp-servers-for-revit/mcp-servers-for-revit) for the full categorized list.
+
+### Revit Commands (84)
+
+All Revit commands are defined in `Commands/RevitMCPCommandSet/command.json` and registered via `Commands/commandRegistry.json` at runtime. The plugin uses `{VERSION}` placeholder substitution to select the correct DLL for the current Revit version.
+
+**Categories:** General (3) · Query & Selection (10) · Architecture (19) · MEP (10) · Annotation (8) · Views & Sheets (18) · Modify (10) · Family (2) · Analysis & Data (4)
+
+### Database Utilities (3)
 
 | Tool | Description |
 | ---- | ----------- |
-| `get_current_view_info` | Get current active view info |
-| `get_current_view_elements` | Get elements from the current active view |
-| `get_available_family_types` | Get available family types in current project |
-| `get_selected_elements` | Get currently selected elements |
-| `get_material_quantities` | Calculate material quantities and takeoffs |
-| `ai_element_filter` | Intelligent element querying tool for AI assistants |
-| `analyze_model_statistics` | Analyze model complexity with element counts |
-| `create_point_based_element` | Create point-based elements (door, window, furniture) |
-| `create_line_based_element` | Create line-based elements (wall, beam, pipe) |
-| `create_surface_based_element` | Create surface-based elements (floor, ceiling, roof) |
-| `create_grid` | Create a grid system with smart spacing generation |
-| `create_level` | Create levels at specified elevations |
-| `create_room` | Create and place rooms at specified locations |
-| `create_dimensions` | Create dimension annotations in the current view |
-| `create_structural_framing_system` | Create a structural beam framing system |
-| `delete_element` | Delete elements by ID |
-| `operate_element` | Operate on elements (select, setColor, hide, etc.) |
-| `color_elements` | Color elements based on a parameter value |
-| `tag_all_walls` | Tag all walls in the current view |
-| `tag_all_rooms` | Tag all rooms in the current view |
-| `export_room_data` | Export all room data from the project |
 | `store_project_data` | Store project metadata in local database |
 | `store_room_data` | Store room metadata in local database |
 | `query_stored_data` | Query stored project and room data |
-| `send_code_to_revit` | Send C# code to Revit to execute |
-| `say_hello` | Display a greeting dialog in Revit (connection test) |
+
+### Other Utilities (3)
+
+| Tool | Description |
+| ---- | ----------- |
+| `search_modules` | Search for available modules |
+| `use_module` | Use a specific module |
+| `modify_element` | Generic element modification helper |
 
 ## Development
 

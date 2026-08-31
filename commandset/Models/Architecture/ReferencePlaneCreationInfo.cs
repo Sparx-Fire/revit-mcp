@@ -35,7 +35,7 @@ public class ReferencePlaneCreationInfo
     /// </summary>
     public ReferencePlaneCreationInfo()
     {
-        Points = new List<Point>();
+        Points = new List<JZPoint>();
         Parameters = new Dictionary<string, object>();
     }
 
@@ -55,31 +55,31 @@ public class ReferencePlaneCreationInfo
     ///     Bubble end point for line-based creation (millimeters)
     /// </summary>
     [JsonProperty("bubbleEnd")]
-    public Point BubbleEnd { get; set; }
+    public JZPoint BubbleEnd { get; set; }
 
     /// <summary>
     ///     Free end point for line-based creation (millimeters)
     /// </summary>
     [JsonProperty("freeEnd")]
-    public Point FreeEnd { get; set; }
+    public JZPoint FreeEnd { get; set; }
 
     /// <summary>
     ///     Third point for defining the plane (millimeters)
     /// </summary>
     [JsonProperty("thirdPoint")]
-    public Point ThirdPoint { get; set; }
+    public JZPoint ThirdPoint { get; set; }
 
     /// <summary>
     ///     Origin point for normal-based creation (millimeters)
     /// </summary>
     [JsonProperty("origin")]
-    public Point Origin { get; set; }
+    public JZPoint Origin { get; set; }
 
     /// <summary>
     ///     Normal vector for normal-based creation
     /// </summary>
     [JsonProperty("normal")]
-    public Point Normal { get; set; }
+    public JZPoint Normal { get; set; }
 
     /// <summary>
     ///     Length of the reference plane line in millimeters
@@ -91,7 +91,7 @@ public class ReferencePlaneCreationInfo
     ///     Points for creating reference plane (for ByPoints method)
     /// </summary>
     [JsonProperty("points")]
-    public List<Point> Points { get; set; }
+    public List<JZPoint> Points { get; set; }
 
     /// <summary>
     ///     Additional parameters

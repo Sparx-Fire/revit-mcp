@@ -22,6 +22,7 @@
 //
 
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using RevitMCPCommandSet.Models.Common;
 
 namespace RevitMCPCommandSet.Models.Architecture;
@@ -29,6 +30,7 @@ namespace RevitMCPCommandSet.Models.Architecture;
 /// <summary>
 ///     Type of opening
 /// </summary>
+[JsonConverter(typeof(OpeningTypeConverter))]
 public enum OpeningType
 {
     WallOpening,
@@ -143,4 +145,36 @@ public class OpeningCreationInfo
     /// </summary>
     [JsonProperty("options")]
     public Dictionary<string, object> Options { get; set; }
+}
+
+/// <summary>
+///     Custom JsonConverter for OpeningType enum that handles friendly names
+///     Maps "Wall"/"Floor"/"Roof"/"Shaft" to WallOpening/FloorOpening/RoofOpening/ShaftOpening
+/// </summary>
+public class OpeningTypeConverter : JsonConverter<OpeningType>
+{
+    private static readonly Dictionary<string, OpeningType> NameMap = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["Wall"] = OpeningType.WallOpening,
+        ["WallOpening"] = OpeningType.WallOpening,
+        ["Floor"] = OpeningType.FloorOpening,
+        ["FloorOpening"] = OpeningType.FloorOpening,
+        ["Roof"] = OpeningType.RoofOpening,
+        ["RoofOpening"] = OpeningType.RoofOpening,
+        ["Shaft"] = OpeningType.ShaftOpening,
+        ["ShaftOpening"] = OpeningType.ShaftOpening,
+    };
+
+    public override OpeningType ReadJson(JsonReader reader, Type objectType, OpeningType existingValue, bool hasExistingValue, JsonSerializer serializer)
+    {
+        var value = reader.Value?.ToString();
+        if (value != null && NameMap.TryGetValue(value, out var openingType))
+            return openingType;
+        throw new JsonSerializationException($"Cannot convert value '{value}' to OpeningType. Supported values: Wall, Floor, Roof, Shaft (or WallOpening, FloorOpening, RoofOpening, ShaftOpening)");
+    }
+
+    public override void WriteJson(JsonWriter writer, OpeningType value, JsonSerializer serializer)
+    {
+        writer.WriteValue(value.ToString());
+    }
 }

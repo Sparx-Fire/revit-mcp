@@ -1,19 +1,8 @@
-using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Architecture;
 using Autodesk.Revit.DB.Mechanical;
-using Autodesk.Revit.UI;
 using Newtonsoft.Json;
 using RevitMCPSDK.API.Interfaces;
 using RevitMCPCommandSet.Models.Common;
-using RevitMCPCommandSet.Utils;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml;
 
 namespace RevitMCPCommandSet.Services
 {
@@ -1080,13 +1069,16 @@ namespace RevitMCPCommandSet.Services
             // 只存储尺寸类型参数
             return isDimensionType;
 #else
-            // 判断参数是否为尺寸相关的类型
-            bool isDimensionType = param.Definition.ParameterType == ParameterType.Length ||
-                                   param.Definition.ParameterType == ParameterType.Angle ||
-                                   param.Definition.ParameterType == ParameterType.Area ||
-                                   param.Definition.ParameterType == ParameterType.Volume;
+            // R20-R22: Definition.ParameterType not accessible, use parameter name matching
+            string paramName = param.Definition.Name;
+            bool isDimensionType = !string.IsNullOrEmpty(paramName) &&
+                (paramName.Contains("Length") || paramName.Contains("Angle") ||
+                 paramName.Contains("Area") || paramName.Contains("Volume") ||
+                 paramName.Contains("Height") || paramName.Contains("Width") ||
+                 paramName.Contains("Depth") || paramName.Contains("Thickness") ||
+                 paramName.Contains("Radius") || paramName.Contains("Diameter") ||
+                 paramName.Contains("Offset") || paramName.Contains("Elevation"));
 
-            // 只存储尺寸类型参数
             return isDimensionType;
 #endif
         }

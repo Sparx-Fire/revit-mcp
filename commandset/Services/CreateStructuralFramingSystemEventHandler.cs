@@ -1,9 +1,5 @@
-using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
-using Autodesk.Revit.UI;
-using RevitMCPCommandSet.Models.Common;
 using RevitMCPCommandSet.Models.Structure;
-using RevitMCPCommandSet.Utils;
 using RevitMCPSDK.API.Interfaces;
 
 namespace RevitMCPCommandSet.Services
@@ -180,19 +176,11 @@ namespace RevitMCPCommandSet.Services
                     ICollection<ElementId> beamIds = beamSystem.GetBeamIds();
                     List<long> beamIdsList = new List<long>();
 
-#if REVIT2024_OR_GREATER
-                    long beamSystemId = beamSystem.Id.Value;
+                    long beamSystemId = beamSystem.Id.GetValue();
                     foreach (ElementId beamId in beamIds)
                     {
-                        beamIdsList.Add(beamId.Value);
+                        beamIdsList.Add(beamId.GetValue());
                     }
-#else
-                    long beamSystemId = beamSystem.Id.IntegerValue;
-                    foreach (ElementId beamId in beamIds)
-                    {
-                        beamIdsList.Add(beamId.IntegerValue);
-                    }
-#endif
 
                     // 10. Read actual spacing from layout rule
                     double actualSpacing = layoutRule.Spacing * 304.8;  // ft to mm
