@@ -30,7 +30,7 @@ The **MCP Server** (TypeScript) translates tool calls from AI clients into WebSo
 ## Requirements
 
 - **Node.js 18+** (for the MCP server)
-- **Autodesk Revit 2020 - 2026** (any supported version)
+- **Autodesk Revit 2020 - 2027** (any supported version)
 
 ## Quick Start (Using a Release)
 
@@ -146,15 +146,18 @@ The test project uses [Nice3point.TUnit.Revit](https://github.com/Nice3point/Rev
 
 ### Prerequisites
 
-- **.NET 10 SDK** — required by Nice3point.Revit.Sdk 6.1.0. Install via `winget install Microsoft.DotNet.SDK.10`
-- **Autodesk Revit 2026** (or 2025) — must be installed and licensed on your machine
+- **.NET 10 SDK** — required by Nice3point.Revit.Sdk 6.2.3. Install via `winget install Microsoft.DotNet.SDK.10`
+- **Autodesk Revit 2027** (or 2026, or 2025) — must be installed and licensed on your machine
 
 ### Running Tests
 
-1. Open Revit 2026 (or 2025) and wait for it to fully load
+1. Open Revit 2027 (or 2026, or 2025) and wait for it to fully load
 2. Run the tests from the command line:
 
 ```bash
+# For Revit 2027
+dotnet test -c Debug.R27 -r win-x64 tests/commandset
+
 # For Revit 2026
 dotnet test -c Debug.R26 -r win-x64 tests/commandset
 
@@ -235,10 +238,11 @@ The server compiles TypeScript to `server/build/`. During development you can ru
 
 ### Revit Plugin + Command Set
 
-Open `mcp-servers-for-revit.sln` in Visual Studio. The solution contains both the plugin and command set projects. Build configurations target Revit 2020-2026:
+Open `mcp-servers-for-revit.sln` in Visual Studio. The solution contains both the plugin and command set projects. Build configurations target Revit 2020-2027:
 
 - **Revit 2020-2024**: .NET Framework 4.8 (`Release R20` through `Release R24`)
 - **Revit 2025-2026**: .NET 8 (`Release R25`, `Release R26`)
+- **Revit 2027**: .NET 10 (`Release R27`)
 
 Building the solution automatically assembles the complete deployable layout in `plugin/bin/AddIn <year> <config>/` - the command set is copied into the plugin's `Commands/` folder as part of the build.
 
@@ -262,7 +266,7 @@ mcp-servers-for-revit/
 
 A single `v*` tag drives the entire release. The [release workflow](.github/workflows/release.yml) automatically:
 
-- Builds the Revit plugin + command set for Revit 2020-2026
+- Builds the Revit plugin + command set for Revit 2020-2027
 - Creates a GitHub release with `mcp-servers-for-revit-vX.Y.Z-Revit<year>.zip` assets
 - Publishes the MCP server to npm as [`mcp-server-for-revit`](https://www.npmjs.com/package/mcp-server-for-revit)
 
